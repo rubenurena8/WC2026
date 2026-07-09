@@ -93,4 +93,5 @@
  {"Match":"Portugal 0-1 Spain","Home":"Portugal","Away":"Spain","d1":0.1513,"d2":0.9794,"Q":"Within expectation","Stage":"Last 16"}, 
  {"Match":"USA 1-4 Belgium","Home":"USA","Away":"Belgium","d1":0.3322,"d2":1.3879,"Q":"Totally unexpected","Stage":"Last 16"}, 
  {"Match":"Argentina 3-2 Egypt","Home":"Argentina","Away":"Egypt","d1":0.0530,"d2":1.2221,"Q":"Unexpected result","Stage":"Last 16"}, 
- {"Match":"Switzerland 0-0 Colombia","Home":"Switzerland","Away":"Colombia","d1":0.1373,"d2":0.9867,"Q":"Within expectation","Stage":"Last 16"}]
+ {"Match":"Switzerland 0-0 Colombia","Home":"Switzerland","Away":"Colombia","d1":0.1373,"d2":0.9867,"Q":"Within expectation","Stage":"Last 16"},
+ {"Match":"France 2-0 Morocco","Home":"France","Away":"Morocco","d1":0.2988,"d2":0.7208,"Q":"Prediction variance","Stage":"Quarter-finals"}]
