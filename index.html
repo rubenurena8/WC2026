@@ -1,5 +1,12 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>FIFA World Cup 2026 — Match Surprise Explorer</title>
+</head>
+<body>
 <div style="width: 100%; max-width: 960px; margin: 0 auto; font-family: 'Liberation Sans', Arial, sans-serif;">
-  <div style="text-align: center; font-size: 15px; color: #52514e; padding: 6px 0 2px;">FIFA World Cup 2026, Group Stage (72 matches)</div>
+  <div style="text-align: center; font-size: 15px; color: #52514e; padding: 6px 0 2px;">FIFA World Cup 2026 &mdash; Match Surprise Explorer</div>
 
   <div style="display: flex; flex-wrap: wrap; justify-content: center; gap: 18px; margin: 6px 0 8px; font-size: 13px; color: #2c2c2a;">
     <span style="display: flex; align-items: center; gap: 6px;"><span style="width: 11px; height: 11px; border-radius: 50%; background: #2a78d6;"></span>Within expectation</span>
@@ -10,29 +17,39 @@
 
   <div style="display: flex; gap: 16px; align-items: stretch;">
     <div style="position: relative; flex: 1 1 auto; min-width: 0; height: 540px;">
-      <canvas id="quadChart" role="img" aria-label="Scatter plot of all 72 World Cup 2026 group stage matches by how differently the game unfolded vs expected and how much the score defied the run of play, colored by classification. Selecting teams highlights their matches.">Scatter of matches: x axis is how differently the game unfolded versus expected, y axis is how much the score defied the run of play, points colored by classification. Selecting teams on the right highlights their matches.</canvas>
+      <canvas id="quadChart" role="img" aria-label="Scatter plot of World Cup 2026 matches by how differently the game unfolded vs expected and how much the score defied the run of play, colored by classification. Filter by stage and highlight teams.">Loading chart&hellip;</canvas>
     </div>
-    <div style="flex: 0 0 190px; display: flex; flex-direction: column; gap: 6px;">
-      <label for="teamPick" style="font-weight: 700; font-size: 13px; color: #3d3d3a;">Highlight team(s)</label>
-      <div style="font-size: 11px; color: #898781; line-height: 1.4;">Ctrl / Cmd-click to pick several. Selected teams stay in full colour; the rest fade.</div>
-      <select id="teamPick" multiple style="width: 100%; height: 430px; padding: 4px; border: 1px solid #c3c2b7; border-radius: 5px; font-size: 12.5px; font-family: inherit; color: #2c2c2a;"></select>
-      <button id="clearBtn" style="padding: 5px 10px; border: 1px solid #c3c2b7; border-radius: 5px; background: #f5f4ef; font-size: 12px; cursor: pointer; color: #3d3d3a;">Clear selection</button>
+    <div style="flex: 0 0 190px; display: flex; flex-direction: column; gap: 14px;">
+
+      <div style="display: flex; flex-direction: column; gap: 6px;">
+        <label for="stagePick" style="font-weight: 700; font-size: 13px; color: #3d3d3a;">Stage</label>
+        <select id="stagePick" style="width: 100%; padding: 5px; border: 1px solid #c3c2b7; border-radius: 5px; font-size: 12.5px; font-family: inherit; color: #2c2c2a;"></select>
+      </div>
+
+      <div style="display: flex; flex-direction: column; gap: 6px;">
+        <label for="teamPick" style="font-weight: 700; font-size: 13px; color: #3d3d3a;">Highlight team(s)</label>
+        <div style="font-size: 11px; color: #898781; line-height: 1.4;">Ctrl / Cmd-click to pick several. Selected teams stay in full colour; the rest fade.</div>
+        <select id="teamPick" multiple style="width: 100%; height: 360px; padding: 4px; border: 1px solid #c3c2b7; border-radius: 5px; font-size: 12.5px; font-family: inherit; color: #2c2c2a;"></select>
+        <button id="clearBtn" style="padding: 5px 10px; border: 1px solid #c3c2b7; border-radius: 5px; background: #f5f4ef; font-size: 12px; cursor: pointer; color: #3d3d3a;">Clear team selection</button>
+      </div>
+
     </div>
   </div>
   <div style="text-align: right; font-size: 12px; font-style: italic; color: #898781; padding: 4px 8px 6px 0;">Ruben Urena &middot; Own Analysis</div>
 </div>
+
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/chartjs-plugin-datalabels/2.2.0/chartjs-plugin-datalabels.min.js"></script>
 <script>
-const raw = [{"Match": "Mexico 2-0 South Africa", "Home": "Mexico", "Away": "South Africa", "d1": 0.0873, "d2": 0.6389, "Q": "Within expectation"}, {"Match": "Korea Republic 2-1 Czechia", "Home": "Korea Republic", "Away": "Czechia", "d1": 0.3429, "d2": 0.84, "Q": "Prediction variance"}, {"Match": "Canada 1-1 Bosnia & Herzegovina", "Home": "Canada", "Away": "Bosnia & Herzegovina", "d1": 0.1106, "d2": 0.7311, "Q": "Within expectation"}, {"Match": "USA 4-1 Paraguay", "Home": "USA", "Away": "Paraguay", "d1": 0.1032, "d2": 1.5267, "Q": "Unexpected result"}, {"Match": "Haiti 0-1 Scotland", "Home": "Haiti", "Away": "Scotland", "d1": 0.2971, "d2": 0.9327, "Q": "Prediction variance"}, {"Match": "Australia 2-0 T\u00fcrkiye", "Home": "Australia", "Away": "T\u00fcrkiye", "d1": 0.131, "d2": 1.4132, "Q": "Unexpected result"}, {"Match": "Brazil 1-1 Morocco", "Home": "Brazil", "Away": "Morocco", "d1": 0.255, "d2": 0.7567, "Q": "Prediction variance"}, {"Match": "Qatar 1-1 Switzerland", "Home": "Qatar", "Away": "Switzerland", "d1": 0.0777, "d2": 1.3776, "Q": "Unexpected result"}, {"Match": "C\u00f4te d'Ivoire 1-0 Ecuador", "Home": "C\u00f4te d'Ivoire", "Away": "Ecuador", "d1": 0.2302, "d2": 1.0846, "Q": "Prediction variance"}, {"Match": "Germany 7-1 Cura\u00e7ao", "Home": "Germany", "Away": "Cura\u00e7ao", "d1": 0.0675, "d2": 1.5288, "Q": "Unexpected result"}, {"Match": "Netherlands 2-2 Japan", "Home": "Netherlands", "Away": "Japan", "d1": 0.1242, "d2": 1.6973, "Q": "Unexpected result"}, {"Match": "Sweden 5-1 Tunisia", "Home": "Sweden", "Away": "Tunisia", "d1": 0.1458, "d2": 1.7441, "Q": "Unexpected result"}, {"Match": "Saudi Arabia 1-1 Uruguay", "Home": "Saudi Arabia", "Away": "Uruguay", "d1": 0.031, "d2": 1.0298, "Q": "Within expectation"}, {"Match": "Spain 0-0 Cabo Verde", "Home": "Spain", "Away": "Cabo Verde", "d1": 0.0674, "d2": 1.0588, "Q": "Within expectation"}, {"Match": "IR Iran 2-2 New Zealand", "Home": "IR Iran", "Away": "New Zealand", "d1": 0.0985, "d2": 1.206, "Q": "Unexpected result"}, {"Match": "Belgium 1-1 Egypt", "Home": "Belgium", "Away": "Egypt", "d1": 0.1549, "d2": 0.6844, "Q": "Prediction variance"}, {"Match": "France 3-1 Senegal", "Home": "France", "Away": "Senegal", "d1": 0.0197, "d2": 1.3219, "Q": "Unexpected result"}, {"Match": "Iraq 1-4 Norway", "Home": "Iraq", "Away": "Norway", "d1": 0.0563, "d2": 1.2026, "Q": "Unexpected result"}, {"Match": "Argentina 3-0 Algeria", "Home": "Argentina", "Away": "Algeria", "d1": 0.0954, "d2": 1.1401, "Q": "Unexpected result"}, {"Match": "Austria 3-1 Jordan", "Home": "Austria", "Away": "Jordan", "d1": 0.0596, "d2": 1.3911, "Q": "Unexpected result"}, {"Match": "Ghana 1-0 Panama", "Home": "Ghana", "Away": "Panama", "d1": 0.0402, "d2": 0.8735, "Q": "Within expectation"}, {"Match": "England 4-2 Croatia", "Home": "England", "Away": "Croatia", "d1": 0.273, "d2": 1.4467, "Q": "Totally unexpected"}, {"Match": "Portugal 1-1 Congo DR", "Home": "Portugal", "Away": "Congo DR", "d1": 0.5084, "d2": 0.941, "Q": "Prediction variance"}, {"Match": "Uzbekistan 1-3 Colombia", "Home": "Uzbekistan", "Away": "Colombia", "d1": 0.2094, "d2": 1.1036, "Q": "Totally unexpected"}, {"Match": "Czechia 1-1 South Africa", "Home": "Czechia", "Away": "South Africa", "d1": 0.2187, "d2": 0.6728, "Q": "Prediction variance"}, {"Match": "Switzerland 4-1 Bosnia & Herzegovina", "Home": "Switzerland", "Away": "Bosnia & Herzegovina", "d1": 0.2004, "d2": 1.6407, "Q": "Totally unexpected"}, {"Match": "Canada 6-0 Qatar", "Home": "Canada", "Away": "Qatar", "d1": 0.1584, "d2": 0.8832, "Q": "Prediction variance"}, {"Match": "Mexico 1-0 Korea Republic", "Home": "Mexico", "Away": "Korea Republic", "d1": 0.3222, "d2": 1.1861, "Q": "Totally unexpected"}, {"Match": "Brazil 3-0 Haiti", "Home": "Brazil", "Away": "Haiti", "d1": 0.1498, "d2": 0.9494, "Q": "Prediction variance"}, {"Match": "Scotland 0-1 Morocco", "Home": "Scotland", "Away": "Morocco", "d1": 0.0624, "d2": 0.7711, "Q": "Within expectation"}, {"Match": "T\u00fcrkiye 0-1 Paraguay", "Home": "T\u00fcrkiye", "Away": "Paraguay", "d1": 0.3744, "d2": 1.612, "Q": "Totally unexpected"}, {"Match": "USA 2-0 Australia", "Home": "USA", "Away": "Australia", "d1": 0.0921, "d2": 1.0017, "Q": "Within expectation"}, {"Match": "Germany 2-1 C\u00f4te d'Ivoire", "Home": "Germany", "Away": "C\u00f4te d'Ivoire", "d1": 0.105, "d2": 0.7812, "Q": "Within expectation"}, {"Match": "Ecuador 0-0 Cura\u00e7ao", "Home": "Ecuador", "Away": "Cura\u00e7ao", "d1": 0.0355, "d2": 1.335, "Q": "Unexpected result"}, {"Match": "Netherlands 5-1 Sweden", "Home": "Netherlands", "Away": "Sweden", "d1": 0.1245, "d2": 1.1439, "Q": "Unexpected result"}, {"Match": "Tunisia 0-4 Japan", "Home": "Tunisia", "Away": "Japan", "d1": 0.3306, "d2": 0.8817, "Q": "Prediction variance"}, {"Match": "Uruguay 2-2 Cabo Verde", "Home": "Uruguay", "Away": "Cabo Verde", "d1": 0.0263, "d2": 1.189, "Q": "Unexpected result"}, {"Match": "Spain 4-0 Saudi Arabia", "Home": "Spain", "Away": "Saudi Arabia", "d1": 0.0276, "d2": 0.93, "Q": "Within expectation"}, {"Match": "Belgium 0-0 IR Iran", "Home": "Belgium", "Away": "IR Iran", "d1": 0.0301, "d2": 1.2951, "Q": "Unexpected result"}, {"Match": "New Zealand 1-3 Egypt", "Home": "New Zealand", "Away": "Egypt", "d1": 0.07, "d2": 1.0636, "Q": "Within expectation"}, {"Match": "Norway 3-2 Senegal", "Home": "Norway", "Away": "Senegal", "d1": 0.0605, "d2": 1.1098, "Q": "Unexpected result"}, {"Match": "France 3-0 Iraq", "Home": "France", "Away": "Iraq", "d1": 0.0627, "d2": 0.9684, "Q": "Within expectation"}, {"Match": "Argentina 2-0 Austria", "Home": "Argentina", "Away": "Austria", "d1": 0.1959, "d2": 0.8312, "Q": "Prediction variance"}, {"Match": "Jordan 1-2 Algeria", "Home": "Jordan", "Away": "Algeria", "d1": 0.068, "d2": 0.9692, "Q": "Within expectation"}, {"Match": "England 0-0 Ghana", "Home": "England", "Away": "Ghana", "d1": 0.0949, "d2": 0.8997, "Q": "Within expectation"}, {"Match": "Panama 0-1 Croatia", "Home": "Panama", "Away": "Croatia", "d1": 0.0085, "d2": 0.9141, "Q": "Within expectation"}, {"Match": "Portugal 5-0 Uzbekistan", "Home": "Portugal", "Away": "Uzbekistan", "d1": 0.0936, "d2": 1.0894, "Q": "Unexpected result"}, {"Match": "Colombia 1-0 Congo DR", "Home": "Colombia", "Away": "Congo DR", "d1": 0.1567, "d2": 0.6846, "Q": "Prediction variance"}, {"Match": "Scotland 0-3 Brazil", "Home": "Scotland", "Away": "Brazil", "d1": 0.2164, "d2": 1.2748, "Q": "Totally unexpected"}, {"Match": "Morocco 4-2 Haiti", "Home": "Morocco", "Away": "Haiti", "d1": 0.0514, "d2": 1.1371, "Q": "Unexpected result"}, {"Match": "Switzerland 2-1 Canada", "Home": "Switzerland", "Away": "Canada", "d1": 0.2373, "d2": 1.1896, "Q": "Totally unexpected"}, {"Match": "Bosnia & Herzegovina 3-1 Qatar", "Home": "Bosnia & Herzegovina", "Away": "Qatar", "d1": 0.3279, "d2": 1.4313, "Q": "Totally unexpected"}, {"Match": "Czechia 0-3 Mexico", "Home": "Czechia", "Away": "Mexico", "d1": 0.1466, "d2": 1.158, "Q": "Totally unexpected"}, {"Match": "South Africa 1-0 Korea Republic", "Home": "South Africa", "Away": "Korea Republic", "d1": 0.2009, "d2": 0.9163, "Q": "Prediction variance"}, {"Match": "Cura\u00e7ao 0-2 C\u00f4te d'Ivoire", "Home": "Cura\u00e7ao", "Away": "C\u00f4te d'Ivoire", "d1": 0.2139, "d2": 1.0168, "Q": "Prediction variance"}, {"Match": "Ecuador 2-1 Germany", "Home": "Ecuador", "Away": "Germany", "d1": 0.3839, "d2": 1.1595, "Q": "Totally unexpected"}, {"Match": "Japan 1-1 Sweden", "Home": "Japan", "Away": "Sweden", "d1": 0.0673, "d2": 0.8683, "Q": "Within expectation"}, {"Match": "Tunisia 1-3 Netherlands", "Home": "Tunisia", "Away": "Netherlands", "d1": 0.0278, "d2": 1.2551, "Q": "Unexpected result"}, {"Match": "T\u00fcrkiye 3-2 USA", "Home": "T\u00fcrkiye", "Away": "USA", "d1": 0.2008, "d2": 0.7224, "Q": "Prediction variance"}, {"Match": "Paraguay 0-0 Australia", "Home": "Paraguay", "Away": "Australia", "d1": 0.302, "d2": 0.6364, "Q": "Prediction variance"}, {"Match": "Norway 1-4 France", "Home": "Norway", "Away": "France", "d1": 0.2101, "d2": 1.4411, "Q": "Totally unexpected"}, {"Match": "Senegal 5-0 Iraq", "Home": "Senegal", "Away": "Iraq", "d1": 0.2465, "d2": 0.9442, "Q": "Prediction variance"}, {"Match": "Egypt 1-1 IR Iran", "Home": "Egypt", "Away": "IR Iran", "d1": 0.363, "d2": 1.0175, "Q": "Prediction variance"}, {"Match": "New Zealand 1-5 Belgium", "Home": "New Zealand", "Away": "Belgium", "d1": 0.2032, "d2": 1.4854, "Q": "Totally unexpected"}, {"Match": "Cabo Verde 0-0 Saudi Arabia", "Home": "Cabo Verde", "Away": "Saudi Arabia", "d1": 0.2589, "d2": 1.0739, "Q": "Prediction variance"}, {"Match": "Uruguay 0-1 Spain", "Home": "Uruguay", "Away": "Spain", "d1": 0.1708, "d2": 0.6044, "Q": "Prediction variance"}, {"Match": "Panama 0-2 England", "Home": "Panama", "Away": "England", "d1": 0.1567, "d2": 1.0211, "Q": "Prediction variance"}, {"Match": "Croatia 2-1 Ghana", "Home": "Croatia", "Away": "Ghana", "d1": 0.3682, "d2": 1.4603, "Q": "Totally unexpected"}, {"Match": "Algeria 3-3 Austria", "Home": "Algeria", "Away": "Austria", "d1": 0.1373, "d2": 1.5765, "Q": "Unexpected result"}, {"Match": "Jordan 1-3 Argentina", "Home": "Jordan", "Away": "Argentina", "d1": 0.1183, "d2": 1.1092, "Q": "Unexpected result"}, {"Match": "Colombia 0-0 Portugal", "Home": "Colombia", "Away": "Portugal", "d1": 0.2788, "d2": 1.4228, "Q": "Totally unexpected"}, {"Match": "Congo DR 3-1 Uzbekistan", "Home": "Congo DR", "Away": "Uzbekistan", "d1": 0.4272, "d2": 1.4468, "Q": "Totally unexpected"}];
-const teams = ["Algeria", "Argentina", "Australia", "Austria", "Belgium", "Bosnia & Herzegovina", "Brazil", "Cabo Verde", "Canada", "Colombia", "Congo DR", "Croatia", "Cura\u00e7ao", "Czechia", "C\u00f4te d'Ivoire", "Ecuador", "Egypt", "England", "France", "Germany", "Ghana", "Haiti", "IR Iran", "Iraq", "Japan", "Jordan", "Korea Republic", "Mexico", "Morocco", "Netherlands", "New Zealand", "Norway", "Panama", "Paraguay", "Portugal", "Qatar", "Saudi Arabia", "Scotland", "Senegal", "South Africa", "Spain", "Sweden", "Switzerland", "Tunisia", "T\u00fcrkiye", "USA", "Uruguay", "Uzbekistan"];
 const baseColors = {"Within expectation": "#2a78d6", "Prediction variance": "#1baf7a", "Unexpected result": "#eda100", "Totally unexpected": "#e34948"};
 const fadeColors = {"Within expectation": "#c3d6ef", "Prediction variance": "#bfe6d6", "Unexpected result": "#f6e2b0", "Totally unexpected": "#f4cdcc"};
 const D1MED = 0.1462, D2MED = 1.087;
+const ALL_STAGES = "__ALL__";
 
-let selected = new Set();
-const sel = document.getElementById("teamPick");
-teams.forEach(t => { const o = document.createElement("option"); o.value = t; o.textContent = t; sel.appendChild(o); });
+let allData = [];
+let stageFilter = ALL_STAGES;
+let selectedTeams = new Set();
+let chart = null;
 
 const medianLines = {
   id: "medianLines",
@@ -46,13 +63,18 @@ const medianLines = {
   }
 };
 
-function isHit(d) { if (selected.size === 0) return true; return selected.has(d.Home) || selected.has(d.Away); }
+function stageScoped() {
+  return stageFilter === ALL_STAGES ? allData : allData.filter(d => d.Stage === stageFilter);
+}
+
+function isHit(d) { if (selectedTeams.size === 0) return true; return selectedTeams.has(d.Home) || selectedTeams.has(d.Away); }
 
 function buildDatasets() {
-  const anySel = selected.size > 0;
+  const pool = stageScoped();
+  const anySel = selectedTeams.size > 0;
   return Object.keys(baseColors).map(q => ({
     label: q,
-    data: raw.filter(d => d.Q === q).map(d => ({x: d.d1, y: d.d2, match: d.Match, hit: isHit(d)})),
+    data: pool.filter(d => d.Q === q).map(d => ({x: d.d1, y: d.d2, match: d.Match, stage: d.Stage, hit: isHit(d)})),
     backgroundColor: (ctx) => { const hit = ctx.raw ? ctx.raw.hit : true; return (hit ? baseColors[q] : fadeColors[q]); },
     pointRadius: (ctx) => (anySel && ctx.raw && ctx.raw.hit ? 7 : 5),
     pointHoverRadius: 8,
@@ -67,33 +89,84 @@ function buildDatasets() {
   }));
 }
 
-const chart = new Chart(document.getElementById("quadChart"), {
-  type: "scatter",
-  data: { datasets: buildDatasets() },
-  options: {
-    responsive: true, maintainAspectRatio: false, layout: { padding: 10 },
-    scales: {
-      x: { title: { display: true, text: "\u0394\u2081 \u2014 How differently did the game unfold vs expected?", color: "#3d3d3a", font: {size: 13} },
-           min: 0, max: 0.52, ticks: { stepSize: 0.1, color: "#898781" }, grid: { color: "#e1e0d9" }, border: { display: false } },
-      y: { title: { display: true, text: "\u0394\u2082 \u2014 How much did the score defy the run of play?", color: "#3d3d3a", font: {size: 13} },
-           min: 0.6, max: 1.8, ticks: { stepSize: 0.2, color: "#898781" }, grid: { color: "#e1e0d9" }, border: { display: false } }
-    },
-    plugins: {
-      legend: { display: false },
-      tooltip: { callbacks: { label: (ctx) => ctx.raw.match + " (" + ctx.dataset.label + ")" } },
-      datalabels: { display: false }
-    }
-  },
-  plugins: [medianLines, ChartDataLabels]
-});
+function populateTeamDropdown() {
+  const teamSel = document.getElementById("teamPick");
+  const pool = stageScoped();
+  const teams = Array.from(new Set(pool.flatMap(d => [d.Home, d.Away]))).sort();
+  const prevSelected = new Set(Array.from(teamSel.selectedOptions).map(o => o.value));
+  teamSel.innerHTML = "";
+  teams.forEach(t => {
+    const o = document.createElement("option");
+    o.value = t; o.textContent = t;
+    if (prevSelected.has(t)) o.selected = true;
+    teamSel.appendChild(o);
+  });
+  selectedTeams = new Set(Array.from(teamSel.selectedOptions).map(o => o.value));
+}
 
-function refresh() {
-  selected = new Set(Array.from(sel.selectedOptions).map(o => o.value));
+function refreshChart() {
   chart.data.datasets = buildDatasets();
   chart.update();
 }
-sel.addEventListener("change", refresh);
-document.getElementById("clearBtn").addEventListener("click", () => {
-  Array.from(sel.options).forEach(o => o.selected = false); refresh();
-});
+
+fetch("data.json")
+  .then(r => r.json())
+  .then(data => {
+    allData = data;
+
+    // Stage dropdown, derived from the data itself
+    const stages = Array.from(new Set(allData.map(d => d.Stage)));
+    const stageSel = document.getElementById("stagePick");
+    const allOpt = document.createElement("option");
+    allOpt.value = ALL_STAGES; allOpt.textContent = "All stages"; stageSel.appendChild(allOpt);
+    stages.forEach(s => { const o = document.createElement("option"); o.value = s; o.textContent = s; stageSel.appendChild(o); });
+    stageSel.addEventListener("change", () => {
+      stageFilter = stageSel.value;
+      populateTeamDropdown();
+      refreshChart();
+    });
+
+    populateTeamDropdown();
+    const teamSel = document.getElementById("teamPick");
+    teamSel.addEventListener("change", () => {
+      selectedTeams = new Set(Array.from(teamSel.selectedOptions).map(o => o.value));
+      refreshChart();
+    });
+    document.getElementById("clearBtn").addEventListener("click", () => {
+      Array.from(teamSel.options).forEach(o => o.selected = false);
+      selectedTeams = new Set();
+      refreshChart();
+    });
+
+    // Axis range fixed from the FULL dataset so switching stage filters doesn't rescale the chart
+    const allD1 = allData.map(d => d.d1), allD2 = allData.map(d => d.d2);
+    const xMax = Math.ceil((Math.max(...allD1) + 0.02) * 10) / 10;
+    const yMin = Math.floor((Math.min(...allD2) - 0.02) * 10) / 10;
+    const yMax = Math.ceil((Math.max(...allD2) + 0.02) * 10) / 10;
+
+    chart = new Chart(document.getElementById("quadChart"), {
+      type: "scatter",
+      data: { datasets: buildDatasets() },
+      options: {
+        responsive: true, maintainAspectRatio: false, layout: { padding: 10 },
+        scales: {
+          x: { title: { display: true, text: "\u0394\u2081 \u2014 How differently did the game unfold vs expected?", color: "#3d3d3a", font: {size: 13} },
+               min: 0, max: xMax, ticks: { color: "#898781" }, grid: { color: "#e1e0d9" }, border: { display: false } },
+          y: { title: { display: true, text: "\u0394\u2082 \u2014 How much did the score defy the run of play?", color: "#3d3d3a", font: {size: 13} },
+               min: yMin, max: yMax, ticks: { color: "#898781" }, grid: { color: "#e1e0d9" }, border: { display: false } }
+        },
+        plugins: {
+          legend: { display: false },
+          tooltip: { callbacks: { label: (ctx) => ctx.raw.match + " \u2014 " + ctx.raw.stage + " (" + ctx.dataset.label + ")" } },
+          datalabels: { display: false }
+        }
+      },
+      plugins: [medianLines, ChartDataLabels]
+    });
+  })
+  .catch(err => {
+    document.getElementById("quadChart").outerHTML = "<p style='color:#b13230'>Could not load data.json: " + err + "</p>";
+  });
 </script>
+</body>
+</html>
