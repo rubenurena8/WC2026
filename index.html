@@ -55,9 +55,10 @@ let allData = [], stageFilter = ALL_STAGES, selectedTeams = new Set(), chart = n
 const medianLines = {
   id: "medianLines",
   afterDraw(chart) {
-    // const {ctx, chartArea:{top,bottom,left,right}, scales:{x,y}} = chart;
-    // const px=x.getPixelForValue(D1MED), py=y.getPixelForValue(D2MED);
+    const {ctx, chartArea:{top,bottom,left,right}, scales:{x,y}} = chart;
     const D1MED = 0.1731, D2MED = 1.1213;
+    const px=x.getPixelForValue(D1MED), py=y.getPixelForValue(D2MED);
+    
     ctx.save(); ctx.setLineDash([6,5]); ctx.lineWidth=1; ctx.strokeStyle="#c3c2b7";
     ctx.beginPath(); ctx.moveTo(px,top); ctx.lineTo(px,bottom); ctx.stroke();
     ctx.beginPath(); ctx.moveTo(left,py); ctx.lineTo(right,py); ctx.stroke();
