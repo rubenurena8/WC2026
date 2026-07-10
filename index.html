@@ -102,12 +102,12 @@ function showDetail(d){
     "<div style='color:#898781; margin-bottom:8px;'>"+d.Stage+"</div>"+
     "<div style='display:flex; flex-direction:column; gap:5px;'>"+
       "<div style='display:flex; justify-content:space-between; gap:8px;'>"+
-        "<span style='color:#52514e;'>Surprise</span>"+
+        "<span style='color:#52514e;'>Expectancy</span>"+
         "<span style='font-weight:700; color:"+baseColors[d.Q]+"; text-align:right;'>"+d.Q+"</span></div>"+
       oddsRow("Pre-odds ", d.PreOdds)+
       oddsRow("Post-odds", d.PostOdds)+
       "<div style='display:flex; justify-content:space-between; gap:8px;'>"+
-        "<span style='color:#52514e;'>P(exact score)</span>"+
+        "<span style='color:#52514e;'>Prob (" + (d.Match.match(/\d+-\d+/) || ["exact score"])[0] + ")</span>"+
         "<span style='font-weight:700;'>"+d["P(exact score)"]+"</span></div>"+
     "</div>";
 }
