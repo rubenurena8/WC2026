@@ -165,7 +165,7 @@ fetch("data.json").then(r=>r.json()).then(data=>{
           titleFont:{family:FONT_FAMILY}, bodyFont:{family:FONT_FAMILY},
           callbacks:{
             title:(items)=> items[0].raw.rec.Match,
-            label:(ctx)=>{ const d=ctx.raw.rec; return [d.Q, "P(exact score): "+d["P(exact score)"], "(click point for detail)"]; }
+            label:(ctx)=>{ const d=ctx.raw.rec; return ["(click point for detail)"]; }
           }
         },
         datalabels:{display:false}
