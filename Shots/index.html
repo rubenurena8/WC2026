@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html><head><meta charset="utf-8"><title>WC2026 Shot Explorer</title></head>
+<body>
+<div style="width:100%; max-width:1000px; margin:0 auto; font-family:'Liberation Sans',Arial,sans-serif;">
+  <div style="text-align:center; font-size:16px; color:#52514e; padding:6px 0 2px;">FIFA World Cup 2026 &mdash; Shot Explorer</div>
+  <div style="text-align:center; font-size:12px; color:#898781; margin-bottom:10px;">Hover a shot to see its twin on the other panel &middot; click for detail</div>
+
+  <div style="display:flex; gap:10px; flex-wrap:wrap; justify-content:center; margin-bottom:12px; font-size:12.5px;">
+    <div><label style="font-weight:700; color:#3d3d3a;">Stage </label>
+      <select id="stageF" style="padding:4px; border:1px solid #c3c2b7; border-radius:5px;"></select></div>
+    <div><label style="font-weight:700; color:#3d3d3a;">Team </label>
+      <select id="teamF" style="padding:4px; border:1px solid #c3c2b7; border-radius:5px;"></select></div>
+    <div><label style="font-weight:700; color:#3d3d3a;">Player </label>
+      <select id="playerF" style="padding:4px; border:1px solid #c3c2b7; border-radius:5px;"></select></div>
+    <div><label style="font-weight:700; color:#3d3d3a;">Situation </label>
+      <select id="situF" style="padding:4px; border:1px solid #c3c2b7; border-radius:5px;"></select></div>
+    <div><label style="font-weight:700; color:#3d3d3a;">Outcome </label>
+      <select id="outF" style="padding:4px; border:1px solid #c3c2b7; border-radius:5px;"></select></div>
+    <div><label style="font-weight:700; color:#3d3d3a;">Expected Goal </label>
+      <select id="xgF" style="padding:4px; border:1px solid #c3c2b7; border-radius:5px;"></select></div>
+  </div>
+
+  <div style="display:flex; gap:14px; flex-wrap:wrap; justify-content:center;">
+    <div style="flex:1 1 380px;">
+      <div style="font-size:12px; font-weight:700; color:#3d3d3a; text-align:center; margin-bottom:4px;">Where the shot was taken</div>
+      <svg id="pitch" viewBox="0 0 105 68" style="width:100%; background:#f7faf5; border:1px solid #d8e0d3; border-radius:6px;"></svg>
+    </div>
+    <div style="flex:1 1 300px;">
+      <div style="font-size:12px; font-weight:700; color:#3d3d3a; text-align:center; margin-bottom:4px;">Where it went in the goal</div>
+      <svg id="goal" viewBox="0 0 100 60" style="width:100%; background:#fbfaf6; border:1px solid #e1e0d9; border-radius:6px;"></svg>
+      <div id="detail" style="margin-top:10px; border:1px solid #e1e0d9; border-radius:8px; padding:10px 12px; font-size:12px; background:#fbfaf6; min-height:110px;">
+        <span style="color:#898781; font-style:italic;">Click a shot to see the full occasion.</span>
+      </div>
+    </div>
+  </div>
+
+  <div style="display:flex; gap:16px; justify-content:center; align-items:center; margin-top:10px; font-size:12px; color:#2c2c2a; flex-wrap:wrap;">
+    <span><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#e34948;"></span> Goal</span>
+    <span><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#2a78d6;"></span> Saved</span>
+    <span><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#898781;"></span> Missed</span>
+    <span><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#eda100;"></span> Blocked</span>
+    <span style="color:#898781;">dot size = xG</span>
+    <span id="counter" style="color:#3d3d3a; font-weight:700;"></span>
+  </div>
+  <div style="text-align:right; font-size:12px; font-style:italic; color:#898781; padding:6px 4px 0 0;">Ruben Urena &middot; Own Analysis</div>
+</div>
+
+<script>
+const outColor = {Goal:"#e34948", Saved:"#2a78d6", Missed:"#898781", Blocked:"#eda100"};
+const NS="http://www.w3.org/2000/svg";
+const XG_BANDS = [["All",1.01],["<1%",0.01],["<5%",0.05],["<10%",0.10],["<20%",0.20],["<50%",0.50],["<70%",0.70],["<90%",0.90]];
+const STAGE_ORDER=["Group Stage","Last 32","Last 16","Quarter-finals","Semi-finals","Final"];
+
+let SHOTS=[], filt={stage:"All",team:"All",player:"All",situ:"All",out:"All",xg:"All"}, hoverId=null, selId=null;
+
+function uniq(a){return Array.from(new Set(a)).sort();}
+function fillSel(sel,vals){sel.innerHTML="";["All",...vals].forEach(v=>{const o=document.createElement("option");o.value=v;o.textContent=v;sel.appendChild(o);});}
+function xgMax(){const b=XG_BANDS.find(x=>x[0]===filt.xg);return b?b[1]:1.01;}
+function passes(s){
+  return (filt.stage==="All"||s.stage===filt.stage)
+      && (filt.team==="All"||s.team===filt.team)
+      && (filt.player==="All"||s.player===filt.player)
+      && (filt.situ==="All"||s.situation===filt.situ)
+      && (filt.out==="All"||s.outcome===filt.out)
+      && (filt.xg==="All"||s.xg < xgMax());
+}
+
+function dot(svg,i,cx,cy,r,s){
+  const c=document.createElementNS(NS,"circle");
+  c.setAttribute("cx",cx); c.setAttribute("cy",cy); c.setAttribute("r",r);
+  c.setAttribute("fill",outColor[s.outcome]);
+  const active=(hoverId===i||selId===i);
+  c.setAttribute("fill-opacity",active?1:0.62);
+  c.setAttribute("stroke",active?"#2c2c2a":"#ffffff");
+  c.setAttribute("stroke-width",active?0.8:0.3);
+  c.style.cursor="pointer";
+  c.addEventListener("mouseenter",()=>{hoverId=i;render();});
+  c.addEventListener("mouseleave",()=>{hoverId=null;render();});
+  c.addEventListener("click",(ev)=>{ev.stopPropagation(); selId=i; showDetail(s); render();});
+  svg.appendChild(c);
+}
+
+function drawPitch(){
+  const svg=document.getElementById("pitch"); svg.innerHTML="";
+  const line=(x1,y1,x2,y2)=>{const l=document.createElementNS(NS,"line");l.setAttribute("x1",x1);l.setAttribute("y1",y1);l.setAttribute("x2",x2);l.setAttribute("y2",y2);l.setAttribute("stroke","#b9ccb0");l.setAttribute("stroke-width","0.4");svg.appendChild(l);};
+  line(0,0,105,0);line(0,68,105,68);line(105,0,105,68);line(0,0,0,68);
+  line(105,13.85,88.5,13.85);line(105,54.15,88.5,54.15);line(88.5,13.85,88.5,54.15);
+  line(105,24.85,99.5,24.85);line(105,43.15,99.5,43.15);line(99.5,24.85,99.5,43.15);
+  line(105,30.34,105,37.66);
+  SHOTS.forEach((s,i)=>{ if(!passes(s))return; dot(svg,i, s.px/100*105, s.py/100*68, 0.7+Math.sqrt(s.xg)*2.4, s); });
+}
+function drawGoal(){
+  const svg=document.getElementById("goal"); svg.innerHTML="";
+  const rect=document.createElementNS(NS,"rect");
+  rect.setAttribute("x",18);rect.setAttribute("y",6);rect.setAttribute("width",64);rect.setAttribute("height",40);
+  rect.setAttribute("fill","none");rect.setAttribute("stroke","#2c2c2a");rect.setAttribute("stroke-width","1.4");svg.appendChild(rect);
+  const g=document.createElementNS(NS,"line");
+  g.setAttribute("x1",6);g.setAttribute("y1",46);g.setAttribute("x2",94);g.setAttribute("y2",46);
+  g.setAttribute("stroke","#c3c2b7");g.setAttribute("stroke-width","1");svg.appendChild(g);
+  SHOTS.forEach((s,i)=>{ if(!passes(s))return; if(s.outcome==="Blocked")return;
+    dot(svg,i, 50+s.gx*32, 46-Math.min(s.gz,1.4)*40, 1.1+Math.sqrt(s.xg)*3.2, s); });
+}
+
+function showDetail(s){
+  document.getElementById("detail").innerHTML =
+    "<div style='font-weight:700; font-size:13px; color:#2c2c2a;'>"+s.player+" &middot; "+s.team+"</div>"+
+    "<div style='color:#898781; margin-bottom:8px;'>vs "+s.opponent+" &middot; "+s.minute+"'</div>"+
+    "<div style='display:grid; grid-template-columns:90px auto; gap:4px 16px;'>"+
+    "<span style='color:#52514e;'>Outcome</span><span style='font-weight:700;color:"+outColor[s.outcome]+"'>"+s.outcome+"</span>"+
+    "<span style='color:#52514e;'>Situation</span><span style='color:#2c2c2a;'>"+s.situation+"</span>"+
+    "<span style='color:#52514e;'>Body part</span><span style='color:#2c2c2a;'>"+s.body_part+"</span>"+
+    "<span style='color:#52514e;'>xG</span><span style='color:#2c2c2a;'>"+s.xg.toFixed(2)+"</span>"+
+    "<span style='color:#52514e;'>xGOT</span><span style='color:#2c2c2a;'>"+(s.xgot>0?s.xgot.toFixed(2):"\u2014")+"</span>"+
+    "<span style='color:#52514e;'>Goalkeeper</span><span style='color:#2c2c2a;'>"+s.goalkeeper+"</span>"+
+    "</div>";
+}
+function updateCounter(){
+  const v=SHOTS.filter(passes), goals=v.filter(s=>s.outcome==="Goal").length, xs=v.reduce((a,s)=>a+s.xg,0);
+  document.getElementById("counter").textContent=v.length+" shots \u00b7 "+xs.toFixed(1)+" xG \u00b7 "+goals+" goals";
+}
+function render(){ drawPitch(); drawGoal(); updateCounter(); }
+
+fetch("shots.json").then(r=>r.json()).then(data=>{
+  SHOTS=data;
+  const stagesPresent=STAGE_ORDER.filter(s=>SHOTS.some(x=>x.stage===s))
+    .concat(uniq(SHOTS.map(s=>s.stage)).filter(s=>!STAGE_ORDER.includes(s)));
+  fillSel(document.getElementById("stageF"), stagesPresent);
+  fillSel(document.getElementById("teamF"), uniq(SHOTS.map(s=>s.team)));
+  fillSel(document.getElementById("playerF"), uniq(SHOTS.map(s=>s.player)));
+  fillSel(document.getElementById("situF"), uniq(SHOTS.map(s=>s.situation)));
+  fillSel(document.getElementById("outF"), uniq(SHOTS.map(s=>s.outcome)));
+  const xgF=document.getElementById("xgF"); xgF.innerHTML="";
+  XG_BANDS.forEach(([l])=>{const o=document.createElement("option");o.value=l;o.textContent=l;xgF.appendChild(o);});
+
+  const map={stage:"stageF",team:"teamF",player:"playerF",situ:"situF",out:"outF",xg:"xgF"};
+  Object.entries(map).forEach(([k,id])=>{
+    document.getElementById(id).addEventListener("change",e=>{filt[k]=e.target.value; hoverId=null; selId=null; render();});
+  });
+  render();
+}).catch(err=>{ document.getElementById("pitch").outerHTML="<p style='color:#b13230'>Could not load shots.json: "+err+"</p>"; });
+</script>
+</body></html>
