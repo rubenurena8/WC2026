@@ -306,16 +306,16 @@ function drawFinishing(){
 
     // Value label: goals / xG, with signed diff beneath, coloured.
     const diffStr = (r.diff>=0?"+":"\u2212") + Math.abs(r.diff).toFixed(1);
-    txt(W-rightPad, cy-2,
+    txt(W-rightPad-72, cy-2,
         r.goals + " / " + r.xg.toFixed(1),
         {"font-size":12.5, fill:"#2c2c2a", "text-anchor":"end", "dominant-baseline":"middle",
          "font-family":"'Liberation Sans',Arial,sans-serif"});
-    txt(W-rightPad, cy+11, diffStr,
+    txt(W-rightPad-72, cy+11, diffStr,
         {"font-size":12, fill: r.diff>=0.05 ? "#1baf7a" : (r.diff<=-0.05 ? "#e34948" : "#898781"),
          "text-anchor":"end", "font-family":"'Liberation Sans',Arial,sans-serif", "font-weight":"700"});
     // Shot count — quiet reference in its own column, grey, vertically aligned
     // with the Goals/xG number (reads as a peer metric, not a subscript).
-    txt(W-rightPad-72, cy+1, r.shots,
+    txt(W-rightPad, cy+1, r.shots,
         {"font-size":12, fill:"#a3a199", "text-anchor":"end", "dominant-baseline":"middle",
          "font-family":"'Liberation Sans',Arial,sans-serif"});
   });
