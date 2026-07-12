@@ -95,4 +95,5 @@
  {"Match":"Argentina 3-2 Egypt","Home":"Argentina","Away":"Egypt","d1":0.0673,"d2":1.2221,"Q":"Unexpected result","Stage":"Last 16","PreOdds":"72% 19% 10%","PostOdds":"78% 13% 9%","P(exact score)":"4%"}, 
  {"Match":"Switzerland 0-0 Colombia","Home":"Switzerland","Away":"Colombia","d1":0.1373,"d2":0.9867,"Q":"Within expectation","Stage":"Last 16","PreOdds":"27% 31% 43%","PostOdds":"13% 34% 53%","P(exact score)":"23%"}, 
  {"Match":"France 2-0 Morocco","Home":"France","Away":"Morocco","d1":0.3165,"d2":0.7208,"Q":"Prediction variance","Stage":"Quarter-finals","PreOdds":"62% 25% 14%","PostOdds":"93% 6% 1%","P(exact score)":"19%"},
- {"Match":"Spain 2-1 Belgium","Home":"Spain","Away":"Belgium","d1":0.1814,"d2":1.0357,"Q":"Prediction variance","Stage":"Quarter-finals","PreOdds":"60% 24% 16%","PostOdds":"78% 17% 5%","P(exact score)":"7%"}]
+ {"Match":"Spain 2-1 Belgium","Home":"Spain","Away":"Belgium","d1":0.1814,"d2":1.0357,"Q":"Prediction variance","Stage":"Quarter-finals","PreOdds":"60% 24% 16%","PostOdds":"78% 17% 5%","P(exact score)":"7%"},
+ {"Match":"Norway 1-2 England","Home":"Norway","Away":"England","d1":0.1322,"d2":1.2135,"Q":"Unexpected result","Stage":"Quarter-finals","PreOdds":"23% 25% 52%","PostOdds":"28% 33% 39%","P(exact score)":"6%"}]
