@@ -54,7 +54,7 @@
   <!-- ===== Finishing vs xG chart ===== -->
   <div style="margin-top:26px; border-top:1px solid #e1e0d9; padding-top:16px;">
     <div style="text-align:center; font-size:14px; font-weight:700; color:#3d3d3a;">Finishing vs Expectation &mdash; Top 25 by xG</div>
-    <div style="text-align:center; font-size:12px; color:#898781; margin:2px 0 6px;">Goals against expected goals. The grey whisker is the <b>~90% chance range</b> (Poisson&ndash;binomial) &mdash; goals landing inside it are <span style="font-style:italic;">indistinguishable from luck</span>. <b>Finishing</b> shows how their haul ranks against what those chances usually yield: high % = <span style="color:#1baf7a;font-weight:700;">Hot</span>, ~50% = <span style="color:#a3a199;font-weight:700;">Fair</span>, low % = <span style="color:#e34948;font-weight:700;">Cold</span>. Respects the filters above.</div>
+    <div style="text-align:center; font-size:12px; color:#898781; margin:2px 0 6px;">Goals against expected goals. The grey whisker is the <b>~90% chance range</b> (Poisson&ndash;binomial) &mdash; goals landing inside it are <span style="font-style:italic;">indistinguishable from luck</span>. <b>Finishing</b> shows how their haul ranks against what those chances usually yield: high % = <span style="color:#de790d;font-weight:700;">Hot</span>, ~50% = <span style="color:#a3a199;font-weight:700;">Fair</span>, low % = <span style="color:#007bff;font-weight:700;">Cold</span>. Respects the filters above.</div>
     <div id="finishSummary" style="text-align:center; font-size:12.5px; color:#3d3d3a; margin:0 0 10px;"></div>
     <div style="display:flex; gap:16px; justify-content:center; align-items:center; margin-bottom:6px; font-size:11.5px; color:#2c2c2a; flex-wrap:wrap;">
       <span><span style="display:inline-block;width:22px;height:10px;border-radius:2px;background:#8fc3ef;vertical-align:middle;"></span> xG (expected goals)</span>
@@ -400,7 +400,7 @@ function drawFinishing(){
     // usually yield (hot); ~50% = as expected; low % = cold.
     const pc = r.pctile;                          // 0..1
     const hot = pc >= 0.85, cold = pc <= 0.15;
-    const chipColor = hot ? "#1baf7a" : (cold ? "#e34948" : "#a3a199");
+    const chipColor = hot ? "#de790d" : (cold ? "#007bff" : "#a3a199");
     const chipText  = hot ? "Hot" : (cold ? "Cold" : "Fair");
     // percentage (dark, the number)
     txt(colFinish, cy-3, Math.round(pc*100) + "%",
