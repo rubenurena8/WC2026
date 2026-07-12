@@ -75,6 +75,8 @@ const STAGE_ORDER=["Group Stage","Last 32","Last 16","Quarter-finals","Semi-fina
 const GOAL_X_MIN=44.5, GOAL_X_MAX=55.5, GOAL_Z_MIN=0, GOAL_Z_MAX=38;
 
 let SHOTS=[], filt={stage:"All",team:"All",player:"All",situ:"All",out:"All",xg:"All"}, hoverId=null, selId=null;
+// Set true on first touch so hover handlers stand down on mobile (see dot()).
+let isTouch = ("ontouchstart" in window) || (navigator.maxTouchPoints > 0);
 
 // Canonical outcome for a shot
 function getOutcome(s){ return OUT_CANON[s.outcome] || s.outcome || "Unknown"; }
@@ -107,9 +109,15 @@ function dot(svg,i,cx,cy,r,s){
   c.setAttribute("stroke",active?"#2c2c2a":"#ffffff");
   c.setAttribute("stroke-width",active?0.8:0.3);
   c.style.cursor="pointer";
-  c.addEventListener("mouseenter",()=>{hoverId=i;render();});
-  c.addEventListener("mouseleave",()=>{hoverId=null;render();});
-  c.addEventListener("click",(ev)=>{ev.stopPropagation(); selId=i; showDetail(s); render();});
+  // Hover (desktop only). isTouch guards against touch devices firing synthetic
+  // mouseenter, which would re-render and delete this node before the tap completes.
+  c.addEventListener("mouseenter",()=>{ if(isTouch) return; hoverId=i; render(); });
+  c.addEventListener("mouseleave",()=>{ if(isTouch) return; hoverId=null; render(); });
+  // Select handler shared by click and touch. Show detail first, then re-render.
+  const select=(ev)=>{ ev.stopPropagation(); ev.preventDefault(); selId=i; hoverId=i; showDetail(s); render(); };
+  c.addEventListener("click", select);
+  // touchend fires reliably on mobile and lets us mark the device as touch.
+  c.addEventListener("touchend",(ev)=>{ isTouch=true; select(ev); }, {passive:false});
   svg.appendChild(c);
 }
 
