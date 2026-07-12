@@ -54,7 +54,7 @@
   <!-- ===== Finishing vs xG chart ===== -->
   <div style="margin-top:26px; border-top:1px solid #e1e0d9; padding-top:16px;">
     <div style="text-align:center; font-size:14px; font-weight:700; color:#3d3d3a;">Finishing vs Expectation &mdash; Top 25 by xG</div>
-    <div style="text-align:center; font-size:12px; color:#898781; margin:2px 0 6px;">Goals against expected goals. The grey whisker is the <b>~90% chance range</b> (Poisson&ndash;binomial) &mdash; goals landing inside it are <span style="font-style:italic;">indistinguishable from luck</span>. <b>Finishing</b> shows how their haul ranks against what those chances usually yield: high % = <span style="color:#de790d;font-weight:700;">Hot</span>, ~50% = <span style="color:#a3a199;font-weight:700;">Fair</span>, low % = <span style="color:#007bff;font-weight:700;">Cold</span>. Respects the filters above.</div>
+    <div style="text-align:center; font-size:12px; color:#898781; margin:2px 0 6px;">Goals against expected goals. The grey whisker is the <b>~90% chance range</b> (Poisson&ndash;binomial) &mdash; goals landing inside it are <span style="font-style:italic;">indistinguishable from luck</span>. Two sides of finishing:<br><b>Finishing</b> = the luck-heavy outcome, did it go in? (<span style="color:#de790d;font-weight:700;">Hot</span> / <span style="color:#a3a199;font-weight:700;">Fair</span> / <span style="color:#007bff;font-weight:700;">Cold</span>). <br><b>Striking</b> = the skill, did they hit it well? (xGoT&nbsp;&minus;&nbsp;xG on target &mdash; <span style="color:#3f3d9e;font-weight:700;">Strong</span> / <span style="color:#8a88c4;font-weight:700;">Fair</span> / <span style="color:#b9b7dd;font-weight:700;">Weak</span>).</div>
     <div id="finishSummary" style="text-align:center; font-size:12.5px; color:#3d3d3a; margin:0 0 10px;"></div>
     <div style="display:flex; gap:16px; justify-content:center; align-items:center; margin-bottom:6px; font-size:11.5px; color:#2c2c2a; flex-wrap:wrap;">
       <span><span style="display:inline-block;width:22px;height:10px;border-radius:2px;background:#8fc3ef;vertical-align:middle;"></span> xG (expected goals)</span>
@@ -268,12 +268,17 @@ function drawFinishing(){
   const agg = {};
   SHOTS.filter(passes).forEach(s=>{
     const p = s.player || "Unknown";
-    if(!agg[p]) agg[p] = {xg:0, goals:0, shots:0, xgList:[], team:s.team||""};
+    if(!agg[p]) agg[p] = {xg:0, goals:0, shots:0, xgList:[], team:s.team||"", xgotOT:0, xgOT:0};
     const q = (s.xg || 0);
+    const xgot = (s.xgot || 0);
     agg[p].xg   += q;
     agg[p].goals+= getOutcome(s)==="Goal" ? 1 : 0;
     agg[p].shots+= 1;
     agg[p].xgList.push(q);
+    // Placement is defined only on on-target shots (xGoT > 0). Being on target
+    // structurally makes xGoT >= xG, so we compare xGoT vs xG on the SAME on-target
+    // shots to isolate striking quality from simply missing the target.
+    if(xgot > 0){ agg[p].xgotOT += xgot; agg[p].xgOT += q; }
   });
 
   let rows = Object.entries(agg).map(([player,v])=>{
@@ -282,9 +287,10 @@ function drawFinishing(){
     const variance = v.xgList.reduce((a,q)=>a + q*(1-q), 0);
     const sd = Math.sqrt(variance);
     const pctile = finishingPercentile(v.xgList, v.goals); // 0..1, high = hot
+    const placement = v.xgotOT - v.xgOT;  // striking quality on on-target shots
     return {player, ...v, diff:v.goals - v.xg, sd,
             xgPerShot: v.xg / Math.max(1,v.shots),
-            goalsPerShot: v.goals / Math.max(1,v.shots), pctile};
+            goalsPerShot: v.goals / Math.max(1,v.shots), pctile, placement};
   });
   // Take the top 25 by xG (the strongest chance-creators), then present them
   // ordered by goals actually scored, highest to lowest.
@@ -306,19 +312,20 @@ function drawFinishing(){
 
   // Layout geometry (SVG user units == px via viewBox).
   const rowH = 26, top = 14, bottom = 18;
-  const labelW = 150, valueW = 340, rightPad = 14;
-  const W = 940;
+  const labelW = 150, valueW = 420, rightPad = 14;
+  const W = 1020;
   const H = top + bottom + rows.length*rowH;
   const plotL = labelW, plotR = W - valueW - rightPad;
   const plotW = plotR - plotL;
 
   // Column x-anchors (all right-aligned), left-to-right after the bars:
-  // Goals/xG, Finishing, Shots, xG/sh, G/sh.
-  const colGPS   = W - rightPad;          // G/sh (rightmost)
-  const colPerSh = colGPS - 52;           // xG/sh
-  const colShots = colPerSh - 52;         // Shots
-  const colFinish= colShots - 62;         // Finishing (% + Hot/Fair/Cold)
-  const colGoals = colFinish - 74;        // Goals / xG (+ diff) — closest to bars
+  // Goals/xG, Finishing, Placement, Shots, xG/sh, G/sh.
+  const colGPS    = W - rightPad;          // G/sh (rightmost)
+  const colPerSh  = colGPS - 50;           // xG/sh
+  const colShots  = colPerSh - 46;         // Shots
+  const colPlace  = colShots - 74;         // Placement (xGoT-xG + verdict)
+  const colFinish = colPlace - 74;         // Finishing (% + Hot/Fair/Cold)
+  const colGoals  = colFinish - 74;        // Goals / xG (+ diff) — closest to bars
 
   // Scale must accommodate the confidence whisker, which can extend past goals/xG.
   const maxWhisker = Math.max(...rows.map(r=> r.xg + 1.64*r.sd));
@@ -411,6 +418,23 @@ function drawFinishing(){
         {"font-size":11.5, fill:chipColor, "text-anchor":"end", "font-weight":"700",
          "font-family":"'Liberation Sans',Arial,sans-serif"});
 
+    // Placement: xGoT - xG on on-target shots = striking quality (did they hit it well?),
+    // before the keeper. More skill-heavy, less luck, than Finishing. Signed total is
+    // volume-robust (a ratio blows up on tiny samples); verdict is on that total.
+    const plc = r.placement;
+    const sharp = plc >= 1.0, wayward = plc < 0;
+    // Single-hue indigo: full strength = Strong striking, mid = Fair, faded = Weak.
+    // Reads as "more/less skill" rather than good/bad, and stays distinct from the
+    // green/red luck columns beside it.
+    const plcColor = sharp ? "#3f3d9e" : (wayward ? "#b9b7dd" : "#8a88c4");
+    const plcWord  = sharp ? "Strong" : (wayward ? "Weak" : "Fair");
+    txt(colPlace, cy-3, (plc>=0?"+":"\u2212")+Math.abs(plc).toFixed(1),
+        {"font-size":12, fill:"#2c2c2a", "text-anchor":"end", "dominant-baseline":"middle",
+         "font-family":"'Liberation Sans',Arial,sans-serif"});
+    txt(colPlace, cy+11, plcWord,
+        {"font-size":11.5, fill:plcColor, "text-anchor":"end", "font-weight":"700",
+         "font-family":"'Liberation Sans',Arial,sans-serif"});
+
     // Goals / xG (dark) with the signed diff beneath — green when over xG, red when under.
     const diffStr = (r.diff>=0?"+":"\u2212") + Math.abs(r.diff).toFixed(1);
     txt(colGoals, cy-3, r.goals + " / " + r.xg.toFixed(1),
@@ -425,6 +449,7 @@ function drawFinishing(){
   // Column headers for the value area.
   txt(colGoals, top-2, "Goals / xG", {"font-size":11, fill:"#2c2c2a", "text-anchor":"end", "font-weight":"700", "font-family":"'Liberation Sans',Arial,sans-serif"});
   txt(colFinish, top-2, "Finishing", {"font-size":11, fill:"#2c2c2a", "text-anchor":"end", "font-weight":"700", "font-family":"'Liberation Sans',Arial,sans-serif"});
+  txt(colPlace, top-2, "Striking", {"font-size":11, fill:"#2c2c2a", "text-anchor":"end", "font-weight":"700", "font-family":"'Liberation Sans',Arial,sans-serif"});
   txt(colShots, top-2, "Shots", {"font-size":11, fill:"#a3a199", "text-anchor":"end", "font-family":"'Liberation Sans',Arial,sans-serif"});
   txt(colPerSh, top-2, "xG/sh", {"font-size":11, fill:"#a3a199", "text-anchor":"end", "font-family":"'Liberation Sans',Arial,sans-serif"});
   txt(colGPS, top-2, "G/sh", {"font-size":11, fill:"#a3a199", "text-anchor":"end", "font-family":"'Liberation Sans',Arial,sans-serif"});
