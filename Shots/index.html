@@ -54,10 +54,13 @@
   <!-- ===== Finishing vs xG chart ===== -->
   <div style="margin-top:26px; border-top:1px solid #e1e0d9; padding-top:16px;">
     <div style="text-align:center; font-size:14px; font-weight:700; color:#3d3d3a;">Finishing vs Expectation &mdash; Top 25 by xG</div>
-    <div style="text-align:center; font-size:12px; color:#898781; margin:2px 0 10px;">Goals scored against expected goals. <span style="color:#1baf7a; font-weight:700;">Green</span> = outperformed xG &middot; <span style="color:#e34948; font-weight:700;">Red</span> = fell short. Respects the filters above.</div>
+    <div style="text-align:center; font-size:12px; color:#898781; margin:2px 0 6px;">Goals against expected goals. The grey whisker is the <b>~90% chance range</b> (Poisson&ndash;binomial) &mdash; goals landing inside it are <span style="font-style:italic;">indistinguishable from luck</span>. <b>Finishing</b> shows how their haul ranks against what those chances usually yield: high % = <span style="color:#1baf7a;font-weight:700;">Hot</span>, ~50% = <span style="color:#a3a199;font-weight:700;">Fair</span>, low % = <span style="color:#e34948;font-weight:700;">Cold</span>. Respects the filters above.</div>
+    <div id="finishSummary" style="text-align:center; font-size:12.5px; color:#3d3d3a; margin:0 0 10px;"></div>
     <div style="display:flex; gap:16px; justify-content:center; align-items:center; margin-bottom:6px; font-size:11.5px; color:#2c2c2a; flex-wrap:wrap;">
       <span><span style="display:inline-block;width:22px;height:10px;border-radius:2px;background:#8fc3ef;vertical-align:middle;"></span> xG (expected goals)</span>
-      <span><span style="display:inline-block;width:2px;height:14px;background:#1baf7a;vertical-align:middle;"></span> goals scored (tick)</span>
+      <span><span style="display:inline-block;width:22px;height:1px;background:#7d7b73;vertical-align:middle;position:relative;"></span> ~90% chance range</span>
+      <span><span style="display:inline-block;width:3px;height:14px;background:#1baf7a;vertical-align:middle;"></span> goals scored (tick)</span>
+      <span style="color:#898781;">bold tick = beats the noise band</span>
     </div>
     <svg id="finishChart" style="width:100%; background:#fbfaf6; border:1px solid #e1e0d9; border-radius:6px;"></svg>
     <div id="finishEmpty" style="text-align:center; font-size:12px; color:#898781; font-style:italic; padding:8px 0; display:none;">No shots match the current filters.</div>
@@ -231,6 +234,31 @@ function updateCounter(){
   document.getElementById("counter").textContent=v.length+" shots \u00b7 "+xs.toFixed(1)+" xG \u00b7 "+goals+" goals";
 }
 // ---- Finishing vs xG chart (top 25 by xG, respects filters) ----------------
+// Exact Poisson-binomial distribution of goals from a list of shot xG values.
+// Each shot is an independent Bernoulli(xg_i); we build the full PMF via DP.
+function poissonBinomialPMF(ps){
+  let dist = [1.0];
+  for(const p of ps){
+    const nd = new Array(dist.length+1).fill(0);
+    for(let k=0;k<dist.length;k++){
+      nd[k]   += dist[k]*(1-p);
+      nd[k+1] += dist[k]*p;
+    }
+    dist = nd;
+  }
+  return dist;
+}
+// "Finishing percentile": share of chance-outcomes this goal total beats,
+// given the same shots. High = scored more than these chances usually yield (hot);
+// ~50% = exactly as expected; low = scored fewer (cold). Uses mid-p for ties.
+function finishingPercentile(xgList, goals){
+  const pmf = poissonBinomialPMF(xgList);
+  let below = 0;
+  for(let k=0;k<goals && k<pmf.length;k++) below += pmf[k];
+  const at = (goals<pmf.length) ? pmf[goals] : 0;
+  return below + 0.5*at;
+}
+
 function drawFinishing(){
   const svg = document.getElementById("finishChart");
   const empty = document.getElementById("finishEmpty");
@@ -240,29 +268,62 @@ function drawFinishing(){
   const agg = {};
   SHOTS.filter(passes).forEach(s=>{
     const p = s.player || "Unknown";
-    if(!agg[p]) agg[p] = {xg:0, goals:0, shots:0, team:s.team||""};
-    agg[p].xg   += (s.xg || 0);
+    if(!agg[p]) agg[p] = {xg:0, goals:0, shots:0, xgList:[], team:s.team||""};
+    const q = (s.xg || 0);
+    agg[p].xg   += q;
     agg[p].goals+= getOutcome(s)==="Goal" ? 1 : 0;
     agg[p].shots+= 1;
+    agg[p].xgList.push(q);
   });
 
-  let rows = Object.entries(agg).map(([player,v])=>({player, ...v, diff:v.goals - v.xg}));
-  rows.sort((a,b)=> b.xg - a.xg);          // rank by xG
+  let rows = Object.entries(agg).map(([player,v])=>{
+    // Poisson-binomial: each shot is an independent Bernoulli(xg_i).
+    // Expected goals = sum(xg_i); variance = sum(xg_i*(1-xg_i)); sd = sqrt(var).
+    const variance = v.xgList.reduce((a,q)=>a + q*(1-q), 0);
+    const sd = Math.sqrt(variance);
+    const pctile = finishingPercentile(v.xgList, v.goals); // 0..1, high = hot
+    return {player, ...v, diff:v.goals - v.xg, sd,
+            xgPerShot: v.xg / Math.max(1,v.shots),
+            goalsPerShot: v.goals / Math.max(1,v.shots), pctile};
+  });
+  // Take the top 25 by xG (the strongest chance-creators), then present them
+  // ordered by goals actually scored, highest to lowest.
+  rows.sort((a,b)=> b.xg - a.xg);
   rows = rows.slice(0, 25);
+  rows.sort((a,b)=> b.goals - a.goals || b.xg - a.xg);
 
-  if(rows.length === 0){ svg.style.display="none"; empty.style.display="block"; return; }
+  if(rows.length === 0){ svg.style.display="none"; empty.style.display="block"; document.getElementById("finishSummary").textContent=""; return; }
   svg.style.display=""; empty.style.display="none";
 
+  // Summary: how many of these top players finished within a ~90% band (±1.64 sd)?
+  const Z = 1.64;
+  const withinBand = rows.filter(r => r.goals >= r.xg - Z*r.sd && r.goals <= r.xg + Z*r.sd).length;
+  const summaryEl = document.getElementById("finishSummary");
+  if(summaryEl){
+    summaryEl.innerHTML = "<b>"+withinBand+" of "+rows.length+"</b> finished within the noise band (\u00b190% of expected) \u2014 "+
+      "most apparent over/under-performance is indistinguishable from variance.";
+  }
+
   // Layout geometry (SVG user units == px via viewBox).
-  const rowH = 26, top = 12, bottom = 16;
-  const labelW = 150, valueW = 120, rightPad = 14;
-  const W = 720;
+  const rowH = 26, top = 14, bottom = 18;
+  const labelW = 150, valueW = 340, rightPad = 14;
+  const W = 940;
   const H = top + bottom + rows.length*rowH;
   const plotL = labelW, plotR = W - valueW - rightPad;
   const plotW = plotR - plotL;
 
-  const maxVal = Math.max(1, ...rows.map(r=>Math.max(r.xg, r.goals)));
-  const scale = v => (v / maxVal) * plotW;
+  // Column x-anchors (all right-aligned), left-to-right after the bars:
+  // Goals/xG, Finishing, Shots, xG/sh, G/sh.
+  const colGPS   = W - rightPad;          // G/sh (rightmost)
+  const colPerSh = colGPS - 52;           // xG/sh
+  const colShots = colPerSh - 52;         // Shots
+  const colFinish= colShots - 62;         // Finishing (% + Hot/Fair/Cold)
+  const colGoals = colFinish - 74;        // Goals / xG (+ diff) — closest to bars
+
+  // Scale must accommodate the confidence whisker, which can extend past goals/xG.
+  const maxWhisker = Math.max(...rows.map(r=> r.xg + 1.64*r.sd));
+  const maxVal = Math.max(1, maxWhisker, ...rows.map(r=>Math.max(r.xg, r.goals)));
+  const scale = v => (Math.max(0,v) / maxVal) * plotW;
 
   svg.setAttribute("viewBox", `0 0 ${W} ${H}`);
   svg.setAttribute("height", H);
@@ -292,37 +353,81 @@ function drawFinishing(){
     const gEnd  = plotL + scale(r.goals);
     svg.appendChild(el("rect",{x:plotL, y:cy-barH/2, width:Math.max(0.5,scale(r.xg)), height:barH, rx:2, fill:"#8fc3ef"}));
 
+    // Confidence band (~90%, Poisson-binomial ±1.64 sd around xG). This is the
+    // range of goal totals consistent with pure chance given the same shots.
+    const loX = plotL + scale(r.xg - 1.64*r.sd);
+    const hiX = plotL + scale(r.xg + 1.64*r.sd);
+    const whiskY = cy;
+    // horizontal whisker line
+    svg.appendChild(el("line",{x1:loX, y1:whiskY, x2:hiX, y2:whiskY, stroke:"#7d7b73", "stroke-width":1, "stroke-opacity":0.55}));
+    // end caps
+    svg.appendChild(el("line",{x1:loX, y1:cy-4, x2:loX, y2:cy+4, stroke:"#7d7b73", "stroke-width":1, "stroke-opacity":0.55}));
+    svg.appendChild(el("line",{x1:hiX, y1:cy-4, x2:hiX, y2:cy+4, stroke:"#7d7b73", "stroke-width":1, "stroke-opacity":0.55}));
+
     // Over/under-performance vs xG: green if goals>xG, red if goals<xG.
-    // Shown as a translucent band from the xG end to the goals end, plus a tick at goals.
+    const outside = (r.goals < r.xg - 1.64*r.sd) || (r.goals > r.xg + 1.64*r.sd);
     if(Math.abs(r.diff) >= 0.05){
       const over = r.diff > 0;
       const x0 = Math.min(xgEnd, gEnd), x1 = Math.max(xgEnd, gEnd);
       svg.appendChild(el("rect",{x:x0, y:cy-barH/2, width:Math.max(0.5,x1-x0), height:barH, rx:2,
         fill: over ? "#1baf7a" : "#e34948", "fill-opacity":0.30}));
-      // marker tick at the goals total
-      svg.appendChild(el("line",{x1:gEnd, y1:cy-barH/2-2, x2:gEnd, y2:cy+barH/2+2,
-        stroke: over ? "#1baf7a" : "#e34948", "stroke-width":2}));
     }
+    // Goals tick: solid + thicker when the total escapes the noise band (a real signal),
+    // lighter when it sits inside (consistent with chance).
+    svg.appendChild(el("line",{x1:gEnd, y1:cy-barH/2-3, x2:gEnd, y2:cy+barH/2+3,
+      stroke: r.diff>=0 ? "#1baf7a" : "#e34948",
+      "stroke-width": outside ? 3 : 1.6,
+      "stroke-opacity": outside ? 1 : 0.6}));
 
-    // Value label: goals / xG, with signed diff beneath, coloured.
-    const diffStr = (r.diff>=0?"+":"\u2212") + Math.abs(r.diff).toFixed(1);
-    txt(W-rightPad-72, cy-2,
-        r.goals + " / " + r.xg.toFixed(1),
-        {"font-size":12.5, fill:"#2c2c2a", "text-anchor":"end", "dominant-baseline":"middle",
-         "font-family":"'Liberation Sans',Arial,sans-serif"});
-    txt(W-rightPad-72, cy+11, diffStr,
-        {"font-size":11.5, fill: r.diff>=0.05 ? "#1baf7a" : (r.diff<=-0.05 ? "#e34948" : "#898781"),
-         "text-anchor":"end", "font-family":"'Liberation Sans',Arial,sans-serif", "font-weight":"700"});
-    // Shot count — quiet reference in its own column, grey, vertically aligned
-    // with the Goals/xG number (reads as a peer metric, not a subscript).
-    txt(W-rightPad-10, cy+1, r.shots,
+    // ---- Value columns (all right-aligned) ----
+    // G/sh — goals per shot (conversion) — quiet grey column.
+    txt(colGPS, cy+1, r.goalsPerShot.toFixed(2),
         {"font-size":12, fill:"#a3a199", "text-anchor":"end", "dominant-baseline":"middle",
          "font-family":"'Liberation Sans',Arial,sans-serif"});
+
+    // xG per shot (chance quality) — quiet grey column.
+    txt(colPerSh, cy+1, r.xgPerShot.toFixed(2),
+        {"font-size":12, fill:"#a3a199", "text-anchor":"end", "dominant-baseline":"middle",
+         "font-family":"'Liberation Sans',Arial,sans-serif"});
+
+    // Shots — quiet grey column.
+    txt(colShots, cy+1, r.shots,
+        {"font-size":12, fill:"#a3a199", "text-anchor":"end", "dominant-baseline":"middle",
+         "font-family":"'Liberation Sans',Arial,sans-serif"});
+
+    // Finishing likelihood: the percentile of this goal total within the distribution
+    // of outcomes these chances would produce. High % = scored more than the chances
+    // usually yield (hot); ~50% = as expected; low % = cold.
+    const pc = r.pctile;                          // 0..1
+    const hot = pc >= 0.85, cold = pc <= 0.15;
+    const chipColor = hot ? "#1baf7a" : (cold ? "#e34948" : "#a3a199");
+    const chipText  = hot ? "Hot" : (cold ? "Cold" : "Fair");
+    // percentage (dark, the number)
+    txt(colFinish, cy-3, Math.round(pc*100) + "%",
+        {"font-size":12, fill:"#2c2c2a", "text-anchor":"end", "dominant-baseline":"middle",
+         "font-family":"'Liberation Sans',Arial,sans-serif"});
+    // word chip beneath, coloured
+    txt(colFinish, cy+11, chipText,
+        {"font-size":11.5, fill:chipColor, "text-anchor":"end", "font-weight":"700",
+         "font-family":"'Liberation Sans',Arial,sans-serif"});
+
+    // Goals / xG (dark) with the signed diff beneath — green when over xG, red when under.
+    const diffStr = (r.diff>=0?"+":"\u2212") + Math.abs(r.diff).toFixed(1);
+    txt(colGoals, cy-3, r.goals + " / " + r.xg.toFixed(1),
+        {"font-size":12, fill:"#2c2c2a", "text-anchor":"end", "dominant-baseline":"middle",
+         "font-family":"'Liberation Sans',Arial,sans-serif"});
+    const diffColor = r.diff>=0.05 ? "#1baf7a" : (r.diff<=-0.05 ? "#e34948" : "#a3a199");
+    txt(colGoals, cy+11, diffStr,
+        {"font-size":13.5, fill:diffColor, "text-anchor":"end",
+         "font-family":"'Liberation Sans',Arial,sans-serif", "font-weight":"700"});
   });
 
   // Column headers for the value area.
-  txt(W-rightPad-72, top-1, "G / xG", {"font-size":11.5, fill:"#2c2c2a", "text-anchor":"end", "font-weight":"700", "font-family":"'Liberation Sans',Arial,sans-serif"});
-  txt(W-rightPad-10, top-1, "Shots", {"font-size":11.5, fill:"#a3a199", "text-anchor":"end", "font-family":"'Liberation Sans',Arial,sans-serif"});
+  txt(colGoals, top-2, "Goals / xG", {"font-size":11, fill:"#2c2c2a", "text-anchor":"end", "font-weight":"700", "font-family":"'Liberation Sans',Arial,sans-serif"});
+  txt(colFinish, top-2, "Finishing", {"font-size":11, fill:"#2c2c2a", "text-anchor":"end", "font-weight":"700", "font-family":"'Liberation Sans',Arial,sans-serif"});
+  txt(colShots, top-2, "Shots", {"font-size":11, fill:"#a3a199", "text-anchor":"end", "font-family":"'Liberation Sans',Arial,sans-serif"});
+  txt(colPerSh, top-2, "xG/sh", {"font-size":11, fill:"#a3a199", "text-anchor":"end", "font-family":"'Liberation Sans',Arial,sans-serif"});
+  txt(colGPS, top-2, "G/sh", {"font-size":11, fill:"#a3a199", "text-anchor":"end", "font-family":"'Liberation Sans',Arial,sans-serif"});
 }
 
 function render(){ drawPitch(); drawGoal(); updateCounter(); drawFinishing(); }
