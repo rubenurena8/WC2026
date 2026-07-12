@@ -240,9 +240,10 @@ function drawFinishing(){
   const agg = {};
   SHOTS.filter(passes).forEach(s=>{
     const p = s.player || "Unknown";
-    if(!agg[p]) agg[p] = {xg:0, goals:0, team:s.team||""};
+    if(!agg[p]) agg[p] = {xg:0, goals:0, shots:0, team:s.team||""};
     agg[p].xg   += (s.xg || 0);
     agg[p].goals+= getOutcome(s)==="Goal" ? 1 : 0;
+    agg[p].shots+= 1;
   });
 
   let rows = Object.entries(agg).map(([player,v])=>({player, ...v, diff:v.goals - v.xg}));
@@ -254,7 +255,7 @@ function drawFinishing(){
 
   // Layout geometry (SVG user units == px via viewBox).
   const rowH = 26, top = 12, bottom = 16;
-  const labelW = 150, valueW = 46, rightPad = 14;
+  const labelW = 150, valueW = 120, rightPad = 14;
   const W = 720;
   const H = top + bottom + rows.length*rowH;
   const plotL = labelW, plotR = W - valueW - rightPad;
@@ -310,12 +311,18 @@ function drawFinishing(){
         {"font-size":12.5, fill:"#2c2c2a", "text-anchor":"end", "dominant-baseline":"middle",
          "font-family":"'Liberation Sans',Arial,sans-serif"});
     txt(W-rightPad, cy+11, diffStr,
-        {"font-size":10, fill: r.diff>=0.05 ? "#1baf7a" : (r.diff<=-0.05 ? "#e34948" : "#898781"),
+        {"font-size":12, fill: r.diff>=0.05 ? "#1baf7a" : (r.diff<=-0.05 ? "#e34948" : "#898781"),
          "text-anchor":"end", "font-family":"'Liberation Sans',Arial,sans-serif", "font-weight":"700"});
+    // Shot count — quiet reference in its own column, grey, vertically aligned
+    // with the Goals/xG number (reads as a peer metric, not a subscript).
+    txt(W-rightPad-72, cy+1, r.shots,
+        {"font-size":12, fill:"#a3a199", "text-anchor":"end", "dominant-baseline":"middle",
+         "font-family":"'Liberation Sans',Arial,sans-serif"});
   });
 
-  // Column header for the value area.
-  txt(W-rightPad, top-1, "G / xG", {"font-size":8.5, fill:"#b6b4ab", "text-anchor":"end", "font-family":"'Liberation Sans',Arial,sans-serif"});
+  // Column headers for the value area.
+  txt(W-rightPad-72, top-1, "G / xG", {"font-size":11.5, fill:"#2c2c2a", "text-anchor":"end", "font-weight":"700", "font-family":"'Liberation Sans',Arial,sans-serif"});
+  txt(W-rightPad, top-1, "Shots", {"font-size":11.5, fill:"#a3a199", "text-anchor":"end", "font-family":"'Liberation Sans',Arial,sans-serif"});
 }
 
 function render(){ drawPitch(); drawGoal(); updateCounter(); drawFinishing(); }
