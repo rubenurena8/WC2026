@@ -1,0 +1,534 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>WC2026 &mdash; Shot Explorer</title>
+<style>
+  :root{
+    --ink:#2c2c2a; --sub:#52514e; --muted:#898781; --line:#e1e0d9;
+    --card:#ffffff; --panel:#ffffff;
+    --blue:#2a78d6; --green:#1baf7a; --amber:#eda100; --red:#e34948;
+    --display:'Liberation Sans',Arial,sans-serif;
+    --body:'Liberation Sans',Arial,sans-serif;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0; font-family:var(--body); color:var(--ink); background:#ffffff;
+       -webkit-font-smoothing:antialiased; text-rendering:optimizeLegibility;}
+  .wrap{width:100%; max-width:1230px; margin:0 auto; padding:26px 18px 44px;}
+
+  .backlink{font-family:var(--display); font-size:12px; font-weight:600; letter-spacing:.04em;
+            color:var(--muted); text-decoration:none;}
+  .backlink:hover{color:var(--sub);}
+  .backlink::before{content:"\2190 ";}
+
+  header{text-align:center; margin:14px 0 18px;}
+  .kicker{font-family:var(--display); font-size:12px; font-weight:600; letter-spacing:.18em;
+          text-transform:uppercase; color:var(--muted); margin-bottom:9px;}
+  h1{font-family:var(--display); font-size:32px; font-weight:700; letter-spacing:-0.02em;
+     color:var(--sub); margin:0 0 11px; line-height:1.07;}
+  .lede{font-size:14px; color:var(--muted); max-width:670px; margin:0 auto; line-height:1.55;}
+  .lede b{color:var(--sub); font-weight:600;}
+
+  footer{font-family:var(--display); text-align:right; font-size:13px; color:var(--muted); padding:20px 4px 0 0;}
+  footer b{color:var(--sub); font-weight:600;}
+  @media(max-width:760px){
+    .wrap{padding:18px 12px 34px;}
+    header{margin:10px 0 12px;}
+    h1{font-size:24px;}
+    .lede{font-size:13px;}
+    /* let both pitch/goal panels take the full width when they stack */
+    .wrap [style*="flex:1 1 380px"], .wrap [style*="flex:1 1 400px"]{max-width:100% !important; flex-basis:100% !important;}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <a class="backlink" href="../index.html">Back to Match Analytics</a>
+  <header>
+    <div class="kicker">FIFA World Cup 2026</div>
+    <h1>Shot Explorer</h1>
+    <p class="lede">Every shot in the tournament, twinned across two panels &mdash; where on the pitch it was taken and where it ended up in the goal mouth. <b>Hover a shot to see its twin; click for detail.</b> Filter by stage, team, player, situation, outcome and xG band.</p>
+  </header>
+<div style="display:flex; gap:10px; flex-wrap:wrap; justify-content:center; margin-bottom:12px; font-size:12.5px;">
+    <div><label style="font-weight:700; color:#3d3d3a;">Stage </label>
+      <select id="stageF" style="padding:4px; border:1px solid #c3c2b7; border-radius:5px;"></select></div>
+    <div><label style="font-weight:700; color:#3d3d3a;">Team </label>
+      <select id="teamF" style="padding:4px; border:1px solid #c3c2b7; border-radius:5px;"></select></div>
+    <div><label style="font-weight:700; color:#3d3d3a;">Player </label>
+      <select id="playerF" style="padding:4px; border:1px solid #c3c2b7; border-radius:5px;"></select></div>
+    <div><label style="font-weight:700; color:#3d3d3a;">Situation </label>
+      <select id="situF" style="padding:4px; border:1px solid #c3c2b7; border-radius:5px;"></select></div>
+    <div><label style="font-weight:700; color:#3d3d3a;">Outcome </label>
+      <select id="outF" style="padding:4px; border:1px solid #c3c2b7; border-radius:5px;"></select></div>
+    <div><label style="font-weight:700; color:#3d3d3a;">Expected Goal </label>
+      <select id="xgF" style="padding:4px; border:1px solid #c3c2b7; border-radius:5px;"></select></div>
+  </div>
+
+  <div style="display:flex; gap:14px; flex-wrap:wrap; justify-content:center;">
+    <div style="flex:1 1 380px; max-width: 500px;">
+      <div style="font-size:12px; font-weight:700; color:#3d3d3a; text-align:center; margin-bottom:4px;">Where the shot was taken</div>
+      <!-- Authentic green grass background -->
+      <svg id="pitch" viewBox="-2 -2 72 56.5" style="width:100%; background:#5ca15c; border:1px solid #4a824a; border-radius:6px;"></svg>
+    </div>
+    <div style="flex:1 1 400px; max-width: 600px;">
+      <div style="font-size:12px; font-weight:700; color:#3d3d3a; text-align:center; margin-bottom:4px;">Where it went in the goal</div>
+      <svg id="goal" viewBox="0 0 120 42" style="width:100%; background:#ffffff; border:1px solid #e1e0d9; border-radius:6px;">
+        <defs>
+          <pattern id="net" width="3" height="3" patternUnits="userSpaceOnUse">
+            <path d="M 3 0 L 0 3 M 0 0 L 3 3" fill="none" stroke="#d1d0c5" stroke-width="0.4" opacity="0.6"/>
+          </pattern>
+        </defs>
+      </svg>
+      <div id="detail" style="margin-top:10px; border:1px solid #e1e0d9; border-radius:8px; padding:10px 12px; font-size:12px; background:#ffffff; min-height:110px;">
+        <span style="color:#898781; font-style:italic;">Click a shot to see the full occasion.</span>
+      </div>
+    </div>
+  </div>
+
+  <div style="display:flex; gap:16px; justify-content:center; align-items:center; margin-top:10px; font-size:12px; color:#2c2c2a; flex-wrap:wrap;">
+    <span><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#e34948;"></span> Goal</span>
+    <span><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#2a78d6;"></span> Saved</span>
+    <span><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#898781;"></span> Missed</span>
+    <span><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#eda100;"></span> Blocked</span>
+    <span><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#7b5cc0;"></span> Post</span>
+    <span style="color:#898781; margin-left:8px;">dot size = xG</span>
+    <span id="counter" style="color:#3d3d3a; font-weight:700;"></span>
+  </div>
+
+  <!-- ===== Finishing vs xG chart ===== -->
+  <div style="margin-top:26px; border-top:1px solid #e1e0d9; padding-top:16px;">
+    <div style="text-align:center; font-size:14px; font-weight:700; color:#3d3d3a;">Finishing vs Expectation &mdash; Top 25 by xG</div>
+    <div style="text-align:center; font-size:12px; color:#898781; margin:2px 0 6px;">Goals against expected goals. The grey whisker is the <b>~90% chance range</b> (Poisson&ndash;binomial) &mdash; goals landing inside it are <span style="font-style:italic;">indistinguishable from luck</span>. Two sides of finishing:<br><b>Finishing</b> = the luck-heavy outcome, did it go in? (<span style="color:#de790d;font-weight:700;">Hot</span> / <span style="color:#a3a199;font-weight:700;">Fair</span> / <span style="color:#007bff;font-weight:700;">Cold</span>). <br><b>Striking</b> = the skill, did they hit it well? (xGoT&nbsp;&minus;&nbsp;xG on target &mdash; <span style="color:#3f3d9e;font-weight:700;">Strong</span> / <span style="color:#8a88c4;font-weight:700;">Fair</span> / <span style="color:#b9b7dd;font-weight:700;">Weak</span>).</div>
+    <div id="finishSummary" style="text-align:center; font-size:12.5px; color:#3d3d3a; margin:0 0 10px;"></div>
+    <div style="display:flex; gap:16px; justify-content:center; align-items:center; margin-bottom:6px; font-size:11.5px; color:#2c2c2a; flex-wrap:wrap;">
+      <span><span style="display:inline-block;width:22px;height:10px;border-radius:2px;background:#8fc3ef;vertical-align:middle;"></span> xG (expected goals)</span>
+      <span><span style="display:inline-block;width:22px;height:1px;background:#7d7b73;vertical-align:middle;position:relative;"></span> ~90% chance range</span>
+      <span><span style="display:inline-block;width:3px;height:14px;background:#1baf7a;vertical-align:middle;"></span> goals scored (tick)</span>
+      <span style="color:#898781;">bold tick = beats the noise band</span>
+    </div>
+    <svg id="finishChart" style="width:100%; background:#ffffff; border:1px solid #e1e0d9; border-radius:6px;"></svg>
+    <div id="finishEmpty" style="text-align:center; font-size:12px; color:#898781; font-style:italic; padding:8px 0; display:none;">No shots match the current filters.</div>
+  </div>
+
+  <footer><b>Ruben Urena</b> &middot; Own Analysis &amp; Sofascore data</footer>
+
+<script>
+// ---- Outcome normalisation ------------------------------------------------
+// New JSON uses: Goal / Save / Miss / Block / Post  (Sofascore-style verbs).
+// We map every raw value to a canonical label used for colours, filtering and legend.
+const OUT_CANON = {
+  Goal:"Goal", goal:"Goal",
+  Save:"Saved", Saved:"Saved", save:"Saved",
+  Miss:"Missed", Missed:"Missed", miss:"Missed",
+  Block:"Blocked", Blocked:"Blocked", block:"Blocked",
+  Post:"Post", post:"Post"
+};
+const outColor = {Goal:"#e34948", Saved:"#2a78d6", Missed:"#898781", Blocked:"#eda100", Post:"#7b5cc0", Unknown:"#52514e"};
+const NS="http://www.w3.org/2000/svg";
+const XG_BANDS = [["All",1.01],["<1%",0.01],["<5%",0.05],["<10%",0.10],["<20%",0.20],["<50%",0.50],["<70%",0.70],["<90%",0.90]];
+const STAGE_ORDER=["Group Stage","Last 32","Last 16","Quarter-finals","Semi-finals","Final"];
+
+// Goal-mouth reference frame (in the JSON's gx / gz units):
+//   gx  ~ 44.5 .. 55.5  (left post .. right post, width 11)
+//   gz  ~ 0    .. 38    (ground .. crossbar)
+const GOAL_X_MIN=44.5, GOAL_X_MAX=55.5, GOAL_Z_MIN=0, GOAL_Z_MAX=38;
+
+let SHOTS=[], filt={stage:"All",team:"All",player:"All",situ:"All",out:"All",xg:"All"}, hoverId=null, selId=null;
+// Set true on first touch so hover handlers stand down on mobile (see dot()).
+let isTouch = ("ontouchstart" in window) || (navigator.maxTouchPoints > 0);
+
+// Canonical outcome for a shot
+function getOutcome(s){ return OUT_CANON[s.outcome] || s.outcome || "Unknown"; }
+
+function uniq(a){return Array.from(new Set(a)).sort();}
+function fillSel(sel,vals){sel.innerHTML="";["All",...vals].forEach(v=>{const o=document.createElement("option");o.value=v;o.textContent=v;sel.appendChild(o);});}
+function xgMax(){const b=XG_BANDS.find(x=>x[0]===filt.xg);return b?b[1]:1.01;}
+function passes(s){
+  const out = getOutcome(s);
+  const xg = s.xg || 0;
+  return (filt.stage==="All"||s.stage===filt.stage)
+      && (filt.team==="All"||s.team===filt.team)
+      && (filt.player==="All"||s.player===filt.player)
+      && (filt.situ==="All"||s.situation===filt.situ)
+      && (filt.out==="All"||out===filt.out)
+      && (filt.xg==="All"||xg < xgMax());
+}
+
+function dot(svg,i,cx,cy,r,s){
+  if (isNaN(cx) || isNaN(cy) || isNaN(r)) return; // Failsafe to prevent crashes
+
+  const c=document.createElementNS(NS,"circle");
+  c.setAttribute("cx",cx); c.setAttribute("cy",cy); c.setAttribute("r",r);
+
+  const out = getOutcome(s);
+  c.setAttribute("fill", outColor[out] || "#52514e");
+
+  const active=(hoverId===i||selId===i);
+  c.setAttribute("fill-opacity",active?1:0.75);
+  c.setAttribute("stroke",active?"#2c2c2a":"#ffffff");
+  c.setAttribute("stroke-width",active?0.8:0.3);
+  c.style.cursor="pointer";
+  // Hover (desktop only). isTouch guards against touch devices firing synthetic
+  // mouseenter, which would re-render and delete this node before the tap completes.
+  c.addEventListener("mouseenter",()=>{ if(isTouch) return; hoverId=i; render(); });
+  c.addEventListener("mouseleave",()=>{ if(isTouch) return; hoverId=null; render(); });
+  // Select handler shared by click and touch. Show detail first, then re-render.
+  const select=(ev)=>{ ev.stopPropagation(); ev.preventDefault(); selId=i; hoverId=i; showDetail(s); render(); };
+  c.addEventListener("click", select);
+  // touchend fires reliably on mobile and lets us mark the device as touch.
+  c.addEventListener("touchend",(ev)=>{ isTouch=true; select(ev); }, {passive:false});
+  svg.appendChild(c);
+}
+
+function drawPitch(){
+  const svg=document.getElementById("pitch"); svg.innerHTML="";
+  const line=(x1,y1,x2,y2)=>{const l=document.createElementNS(NS,"line");l.setAttribute("x1",x1);l.setAttribute("y1",y1);l.setAttribute("x2",x2);l.setAttribute("y2",y2);l.setAttribute("stroke","#ffffff");l.setAttribute("stroke-width","0.4");l.setAttribute("stroke-opacity","0.8");svg.appendChild(l);};
+  const circle=(cx,cy,r)=>{const c=document.createElementNS(NS,"circle");c.setAttribute("cx",cx);c.setAttribute("cy",cy);c.setAttribute("r",r);c.setAttribute("fill","none");c.setAttribute("stroke","#ffffff");c.setAttribute("stroke-width","0.4");svg.appendChild(c);};
+  const spot=(cx,cy,r)=>{const c=document.createElementNS(NS,"circle");c.setAttribute("cx",cx);c.setAttribute("cy",cy);c.setAttribute("r",r);c.setAttribute("fill","#ffffff");svg.appendChild(c);};
+  const path=(d)=>{const p=document.createElementNS(NS,"path");p.setAttribute("d",d);p.setAttribute("fill","none");p.setAttribute("stroke","#ffffff");p.setAttribute("stroke-width","0.4");svg.appendChild(p);};
+
+  // Attacking half towards the goal at the TOP of the SVG (y=0 is the goal line)
+  line(0,0, 68,0); line(0,0, 0,52.5); line(68,0, 68,52.5);
+  line(0,52.5, 68,52.5);
+  circle(34, 52.5, 9.15); spot(34, 52.5, 0.4);
+  line(13.84,0, 13.84,16.5); line(54.16,0, 54.16,16.5); line(13.84,16.5, 54.16,16.5);
+  line(24.84,0, 24.84,5.5); line(43.16,0, 43.16,5.5); line(24.84,5.5, 43.16,5.5);
+  spot(34, 11, 0.4);
+  path("M 26.69 16.5 A 9.15 9.15 0 0 0 41.31 16.5");
+  line(30.34,0, 30.34,-1.5); line(37.66,0, 37.66,-1.5); line(30.34,-1.5, 37.66,-1.5);
+
+  SHOTS.forEach((s,i)=>{
+    if(!passes(s))return;
+
+    // New schema: px = distance from the goal line (0..~55, as % of pitch length),
+    //             py = lateral position across the pitch (0..100, as % of width).
+    // SVG pitch is 68 wide x 52.5 deep with the goal at y=0.
+    if (s.px === undefined || s.py === undefined) return;
+    const pX = (s.py / 100) * 68;          // width  -> 0..68
+    const pY = (s.px / 100) * 105;          // depth  -> px is a % of half-pitch (~52.5m), so up to ~52.5
+
+    const xg = s.xg || 0;
+    dot(svg,i, pX, pY, 0.7+Math.sqrt(xg)*2.4, s);
+  });
+}
+
+function drawGoal(){
+  const svg = document.getElementById("goal");
+  const netPattern = svg.querySelector('defs').outerHTML;
+  svg.innerHTML = netPattern;
+
+  const line = (x1, y1, x2, y2, w, col="#2c2c2a") => {
+    const l = document.createElementNS(NS, "line");
+    l.setAttribute("x1", x1); l.setAttribute("y1", y1);
+    l.setAttribute("x2", x2); l.setAttribute("y2", y2);
+    l.setAttribute("stroke", col); l.setAttribute("stroke-width", w);
+    svg.appendChild(l);
+  };
+  const rect = (x, y, w, h) => {
+    const r = document.createElementNS(NS, "rect");
+    r.setAttribute("x", x); r.setAttribute("y", y);
+    r.setAttribute("width", w); r.setAttribute("height", h);
+    r.setAttribute("fill", "url(#net)");
+    r.setAttribute("stroke", "#c3c2b7"); r.setAttribute("stroke-width", "0.5");
+    svg.appendChild(r);
+  };
+
+  // Goal frame in SVG space: posts at x=20 & x=100, crossbar at y=12, ground at y=40.
+  rect(20, 12, 80, 28);
+  line(0, 40, 120, 40, "1.5", "#a3a299"); // ground line
+  line(20, 12, 100, 12, "3");             // crossbar
+  line(20, 12, 20, 40, "3");              // left post
+  line(100, 12, 100, 40, "3");            // right post
+
+  SHOTS.forEach((s, i) => {
+    if(!passes(s)) return;
+    if(getOutcome(s) === "Blocked") return;      // blocked shots never reach the goal frame
+    if(s.gx === undefined || s.gx === null || s.gz === undefined || s.gz === null) return;
+
+    // Map gx from [GOAL_X_MIN, GOAL_X_MAX] to SVG X [20, 100]
+    const cx = 20 + ((s.gx - GOAL_X_MIN) * (80 / (GOAL_X_MAX - GOAL_X_MIN)));
+    // Map gz from [GOAL_Z_MIN, GOAL_Z_MAX] to SVG Y [40, 12] (height inverted)
+    const cy = 40 - (((s.gz - GOAL_Z_MIN) / (GOAL_Z_MAX - GOAL_Z_MIN)) * 28);
+
+    dot(svg, i, cx, cy, 1.1 + Math.sqrt(s.xg || 0) * 3.2, s);
+  });
+}
+
+function showDetail(s){
+  const xg = s.xg || 0;
+  const out = getOutcome(s);
+
+  document.getElementById("detail").innerHTML =
+    "<div style='font-weight:700; font-size:13px; color:#2c2c2a;'>"+s.player+" &middot; "+(s.team||"Unknown")+"</div>"+
+    "<div style='color:#898781; margin-bottom:8px;'>vs "+(s.opponent||"Opponent")+" &middot; "+s.minute+"'</div>"+
+    "<div style='display:grid; grid-template-columns:90px auto; gap:4px 16px;'>"+
+    "<span style='color:#52514e;'>Outcome</span><span style='font-weight:700;color:"+(outColor[out] || "#52514e")+"'>"+out+"</span>"+
+    "<span style='color:#52514e;'>Situation</span><span style='color:#2c2c2a;'>"+(s.situation || "Unknown")+"</span>"+
+    "<span style='color:#52514e;'>Body part</span><span style='color:#2c2c2a;'>"+(s.body_part || "Unknown")+"</span>"+
+    "<span style='color:#52514e;'>xG</span><span style='color:#2c2c2a;'>"+xg.toFixed(2)+"</span>"+
+    "<span style='color:#52514e;'>xGOT</span><span style='color:#2c2c2a;'>"+(s.xgot>0?s.xgot.toFixed(2):"\u2014")+"</span>"+
+    "<span style='color:#52514e;'>Goalkeeper</span><span style='color:#2c2c2a;'>"+(s.goalkeeper || "None")+"</span>"+
+    "</div>";
+}
+function updateCounter(){
+  const v=SHOTS.filter(passes);
+  const goals=v.filter(s=>getOutcome(s)==="Goal").length;
+  const xs=v.reduce((a,s)=>a+(s.xg||0),0);
+  document.getElementById("counter").textContent=v.length+" shots \u00b7 "+xs.toFixed(1)+" xG \u00b7 "+goals+" goals";
+}
+// ---- Finishing vs xG chart (top 25 by xG, respects filters) ----------------
+// Exact Poisson-binomial distribution of goals from a list of shot xG values.
+// Each shot is an independent Bernoulli(xg_i); we build the full PMF via DP.
+function poissonBinomialPMF(ps){
+  let dist = [1.0];
+  for(const p of ps){
+    const nd = new Array(dist.length+1).fill(0);
+    for(let k=0;k<dist.length;k++){
+      nd[k]   += dist[k]*(1-p);
+      nd[k+1] += dist[k]*p;
+    }
+    dist = nd;
+  }
+  return dist;
+}
+// "Finishing percentile": share of chance-outcomes this goal total beats,
+// given the same shots. High = scored more than these chances usually yield (hot);
+// ~50% = exactly as expected; low = scored fewer (cold). Uses mid-p for ties.
+function finishingPercentile(xgList, goals){
+  const pmf = poissonBinomialPMF(xgList);
+  let below = 0;
+  for(let k=0;k<goals && k<pmf.length;k++) below += pmf[k];
+  const at = (goals<pmf.length) ? pmf[goals] : 0;
+  return below + 0.5*at;
+}
+
+function drawFinishing(){
+  const svg = document.getElementById("finishChart");
+  const empty = document.getElementById("finishEmpty");
+  if(!svg) return;
+
+  // Aggregate the currently-filtered shots by player.
+  const agg = {};
+  SHOTS.filter(passes).forEach(s=>{
+    const p = s.player || "Unknown";
+    if(!agg[p]) agg[p] = {xg:0, goals:0, shots:0, xgList:[], team:s.team||"", xgotOT:0, xgOT:0};
+    const q = (s.xg || 0);
+    const xgot = (s.xgot || 0);
+    agg[p].xg   += q;
+    agg[p].goals+= getOutcome(s)==="Goal" ? 1 : 0;
+    agg[p].shots+= 1;
+    agg[p].xgList.push(q);
+    // Placement is defined only on on-target shots (xGoT > 0). Being on target
+    // structurally makes xGoT >= xG, so we compare xGoT vs xG on the SAME on-target
+    // shots to isolate striking quality from simply missing the target.
+    if(xgot > 0){ agg[p].xgotOT += xgot; agg[p].xgOT += q; }
+  });
+
+  let rows = Object.entries(agg).map(([player,v])=>{
+    // Poisson-binomial: each shot is an independent Bernoulli(xg_i).
+    // Expected goals = sum(xg_i); variance = sum(xg_i*(1-xg_i)); sd = sqrt(var).
+    const variance = v.xgList.reduce((a,q)=>a + q*(1-q), 0);
+    const sd = Math.sqrt(variance);
+    const pctile = finishingPercentile(v.xgList, v.goals); // 0..1, high = hot
+    const placement = v.xgotOT - v.xgOT;  // striking quality on on-target shots
+    return {player, ...v, diff:v.goals - v.xg, sd,
+            xgPerShot: v.xg / Math.max(1,v.shots),
+            goalsPerShot: v.goals / Math.max(1,v.shots), pctile, placement};
+  });
+  // Take the top 25 by xG (the strongest chance-creators), then present them
+  // ordered by goals actually scored, highest to lowest.
+  rows.sort((a,b)=> b.xg - a.xg);
+  rows = rows.slice(0, 25);
+  rows.sort((a,b)=> b.goals - a.goals || b.xg - a.xg);
+
+  if(rows.length === 0){ svg.style.display="none"; empty.style.display="block"; document.getElementById("finishSummary").textContent=""; return; }
+  svg.style.display=""; empty.style.display="none";
+
+  // Summary: how many of these top players finished within a ~90% band (±1.64 sd)?
+  const Z = 1.64;
+  const withinBand = rows.filter(r => r.goals >= r.xg - Z*r.sd && r.goals <= r.xg + Z*r.sd).length;
+  const summaryEl = document.getElementById("finishSummary");
+  if(summaryEl){
+    summaryEl.innerHTML = "<b>"+withinBand+" of "+rows.length+"</b> finished within the noise band (\u00b190% of expected) \u2014 "+
+      "most apparent over/under-performance is indistinguishable from variance.";
+  }
+
+  // Layout geometry (SVG user units == px via viewBox).
+  const rowH = 26, top = 14, bottom = 18;
+  const labelW = 150, valueW = 420, rightPad = 14;
+  const W = 1020;
+  const H = top + bottom + rows.length*rowH;
+  const plotL = labelW, plotR = W - valueW - rightPad;
+  const plotW = plotR - plotL;
+
+  // Column x-anchors (all right-aligned), left-to-right after the bars:
+  // Goals/xG, Finishing, Placement, Shots, xG/sh, G/sh.
+  const colGPS    = W - rightPad;          // G/sh (rightmost)
+  const colPerSh  = colGPS - 50;           // xG/sh
+  const colShots  = colPerSh - 46;         // Shots
+  const colPlace  = colShots - 74;         // Placement (xGoT-xG + verdict)
+  const colFinish = colPlace - 74;         // Finishing (% + Hot/Fair/Cold)
+  const colGoals  = colFinish - 74;        // Goals / xG (+ diff) — closest to bars
+
+  // Scale must accommodate the confidence whisker, which can extend past goals/xG.
+  const maxWhisker = Math.max(...rows.map(r=> r.xg + 1.64*r.sd));
+  const maxVal = Math.max(1, maxWhisker, ...rows.map(r=>Math.max(r.xg, r.goals)));
+  const scale = v => (Math.max(0,v) / maxVal) * plotW;
+
+  svg.setAttribute("viewBox", `0 0 ${W} ${H}`);
+  svg.setAttribute("height", H);
+  while(svg.firstChild) svg.removeChild(svg.firstChild);
+
+  const el=(name,attrs)=>{const e=document.createElementNS(NS,name);for(const k in attrs)e.setAttribute(k,attrs[k]);return e;};
+  const txt=(x,y,s,attrs={})=>{const t=el("text",{x,y,...attrs});t.textContent=s;svg.appendChild(t);return t;};
+
+  // Vertical gridlines at integer goal values.
+  for(let g=0; g<=Math.ceil(maxVal); g++){
+    const gx = plotL + scale(g);
+    svg.appendChild(el("line",{x1:gx,y1:top-2,x2:gx,y2:H-bottom,stroke:"#ece9e1","stroke-width":1}));
+    txt(gx, H-3, g, {"font-size":9, fill:"#b6b4ab", "text-anchor":"middle", "font-family":"'Liberation Sans',Arial,sans-serif"});
+  }
+
+  rows.forEach((r,i)=>{
+    const y = top + i*rowH;
+    const cy = y + rowH/2;
+    const barH = 11;
+
+    // Player name (right-aligned into the label gutter).
+    txt(labelW-8, cy+1, r.player.length>22 ? r.player.slice(0,21)+"\u2026" : r.player,
+        {"font-size":13, fill:"#2c2c2a", "text-anchor":"end", "dominant-baseline":"middle", "font-family":"'Liberation Sans',Arial,sans-serif"});
+
+    // Single xG bar (light blue).
+    const xgEnd = plotL + scale(r.xg);
+    const gEnd  = plotL + scale(r.goals);
+    svg.appendChild(el("rect",{x:plotL, y:cy-barH/2, width:Math.max(0.5,scale(r.xg)), height:barH, rx:2, fill:"#8fc3ef"}));
+
+    // Confidence band (~90%, Poisson-binomial ±1.64 sd around xG). This is the
+    // range of goal totals consistent with pure chance given the same shots.
+    const loX = plotL + scale(r.xg - 1.64*r.sd);
+    const hiX = plotL + scale(r.xg + 1.64*r.sd);
+    const whiskY = cy;
+    // horizontal whisker line
+    svg.appendChild(el("line",{x1:loX, y1:whiskY, x2:hiX, y2:whiskY, stroke:"#7d7b73", "stroke-width":1, "stroke-opacity":0.55}));
+    // end caps
+    svg.appendChild(el("line",{x1:loX, y1:cy-4, x2:loX, y2:cy+4, stroke:"#7d7b73", "stroke-width":1, "stroke-opacity":0.55}));
+    svg.appendChild(el("line",{x1:hiX, y1:cy-4, x2:hiX, y2:cy+4, stroke:"#7d7b73", "stroke-width":1, "stroke-opacity":0.55}));
+
+    // Over/under-performance vs xG: green if goals>xG, red if goals<xG.
+    const outside = (r.goals < r.xg - 1.64*r.sd) || (r.goals > r.xg + 1.64*r.sd);
+    if(Math.abs(r.diff) >= 0.05){
+      const over = r.diff > 0;
+      const x0 = Math.min(xgEnd, gEnd), x1 = Math.max(xgEnd, gEnd);
+      svg.appendChild(el("rect",{x:x0, y:cy-barH/2, width:Math.max(0.5,x1-x0), height:barH, rx:2,
+        fill: over ? "#1baf7a" : "#e34948", "fill-opacity":0.30}));
+    }
+    // Goals tick: solid + thicker when the total escapes the noise band (a real signal),
+    // lighter when it sits inside (consistent with chance).
+    svg.appendChild(el("line",{x1:gEnd, y1:cy-barH/2-3, x2:gEnd, y2:cy+barH/2+3,
+      stroke: r.diff>=0 ? "#1baf7a" : "#e34948",
+      "stroke-width": outside ? 3 : 1.6,
+      "stroke-opacity": outside ? 1 : 0.6}));
+
+    // ---- Value columns (all right-aligned) ----
+    // G/sh — goals per shot (conversion) — quiet grey column.
+    txt(colGPS, cy+1, r.goalsPerShot.toFixed(2),
+        {"font-size":12, fill:"#a3a199", "text-anchor":"end", "dominant-baseline":"middle",
+         "font-family":"'Liberation Sans',Arial,sans-serif"});
+
+    // xG per shot (chance quality) — quiet grey column.
+    txt(colPerSh, cy+1, r.xgPerShot.toFixed(2),
+        {"font-size":12, fill:"#a3a199", "text-anchor":"end", "dominant-baseline":"middle",
+         "font-family":"'Liberation Sans',Arial,sans-serif"});
+
+    // Shots — quiet grey column.
+    txt(colShots, cy+1, r.shots,
+        {"font-size":12, fill:"#a3a199", "text-anchor":"end", "dominant-baseline":"middle",
+         "font-family":"'Liberation Sans',Arial,sans-serif"});
+
+    // Finishing likelihood: the percentile of this goal total within the distribution
+    // of outcomes these chances would produce. High % = scored more than the chances
+    // usually yield (hot); ~50% = as expected; low % = cold.
+    const pc = r.pctile;                          // 0..1
+    const hot = pc >= 0.85, cold = pc <= 0.15;
+    const chipColor = hot ? "#de790d" : (cold ? "#007bff" : "#a3a199");
+    const chipText  = hot ? "Hot" : (cold ? "Cold" : "Fair");
+    // percentage (dark, the number)
+    txt(colFinish, cy-3, Math.round(pc*100) + "%",
+        {"font-size":12, fill:"#2c2c2a", "text-anchor":"end", "dominant-baseline":"middle",
+         "font-family":"'Liberation Sans',Arial,sans-serif"});
+    // word chip beneath, coloured
+    txt(colFinish, cy+11, chipText,
+        {"font-size":11.5, fill:chipColor, "text-anchor":"end", "font-weight":"700",
+         "font-family":"'Liberation Sans',Arial,sans-serif"});
+
+    // Placement: xGoT - xG on on-target shots = striking quality (did they hit it well?),
+    // before the keeper. More skill-heavy, less luck, than Finishing. Signed total is
+    // volume-robust (a ratio blows up on tiny samples); verdict is on that total.
+    const plc = r.placement;
+    const sharp = plc >= 1.0, wayward = plc < 0;
+    // Single-hue indigo: full strength = Strong striking, mid = Fair, faded = Weak.
+    // Reads as "more/less skill" rather than good/bad, and stays distinct from the
+    // green/red luck columns beside it.
+    const plcColor = sharp ? "#3f3d9e" : (wayward ? "#b9b7dd" : "#8a88c4");
+    const plcWord  = sharp ? "Strong" : (wayward ? "Weak" : "Fair");
+    txt(colPlace, cy-3, (plc>=0?"+":"\u2212")+Math.abs(plc).toFixed(1),
+        {"font-size":12, fill:"#2c2c2a", "text-anchor":"end", "dominant-baseline":"middle",
+         "font-family":"'Liberation Sans',Arial,sans-serif"});
+    txt(colPlace, cy+11, plcWord,
+        {"font-size":11.5, fill:plcColor, "text-anchor":"end", "font-weight":"700",
+         "font-family":"'Liberation Sans',Arial,sans-serif"});
+
+    // Goals / xG (dark) with the signed diff beneath — green when over xG, red when under.
+    const diffStr = (r.diff>=0?"+":"\u2212") + Math.abs(r.diff).toFixed(1);
+    txt(colGoals, cy-3, r.goals + " / " + r.xg.toFixed(1),
+        {"font-size":12, fill:"#2c2c2a", "text-anchor":"end", "dominant-baseline":"middle",
+         "font-family":"'Liberation Sans',Arial,sans-serif"});
+    const diffColor = r.diff>=0.05 ? "#1baf7a" : (r.diff<=-0.05 ? "#e34948" : "#a3a199");
+    txt(colGoals, cy+11, diffStr,
+        {"font-size":12, fill:diffColor, "text-anchor":"end",
+         "font-family":"'Liberation Sans',Arial,sans-serif", "font-weight":"700"});
+  });
+
+  // Column headers for the value area.
+  txt(colGoals, top-2, "Goals / xG", {"font-size":11, fill:"#2c2c2a", "text-anchor":"end", "font-weight":"700", "font-family":"'Liberation Sans',Arial,sans-serif"});
+  txt(colFinish, top-2, "Finishing", {"font-size":11, fill:"#2c2c2a", "text-anchor":"end", "font-weight":"700", "font-family":"'Liberation Sans',Arial,sans-serif"});
+  txt(colPlace, top-2, "Striking", {"font-size":11, fill:"#2c2c2a", "text-anchor":"end", "font-weight":"700", "font-family":"'Liberation Sans',Arial,sans-serif"});
+  txt(colShots, top-2, "Shots", {"font-size":11, fill:"#a3a199", "text-anchor":"end", "font-family":"'Liberation Sans',Arial,sans-serif"});
+  txt(colPerSh, top-2, "xG/sh", {"font-size":11, fill:"#a3a199", "text-anchor":"end", "font-family":"'Liberation Sans',Arial,sans-serif"});
+  txt(colGPS, top-2, "G/sh", {"font-size":11, fill:"#a3a199", "text-anchor":"end", "font-family":"'Liberation Sans',Arial,sans-serif"});
+}
+
+function render(){ drawPitch(); drawGoal(); updateCounter(); drawFinishing(); }
+
+function init(data){
+  SHOTS=data;
+
+  const stagesPresent=STAGE_ORDER.filter(st=>SHOTS.some(x=>x.stage===st))
+    .concat(uniq(SHOTS.map(s=>s.stage||"Unknown")).filter(st=>!STAGE_ORDER.includes(st)));
+
+  fillSel(document.getElementById("stageF"), stagesPresent);
+  fillSel(document.getElementById("teamF"), uniq(SHOTS.map(s=>s.team||"Unknown")));
+  fillSel(document.getElementById("playerF"), uniq(SHOTS.map(s=>s.player)));
+  fillSel(document.getElementById("situF"), uniq(SHOTS.map(s=>s.situation)));
+  fillSel(document.getElementById("outF"), uniq(SHOTS.map(getOutcome)));
+
+  const xgF=document.getElementById("xgF"); xgF.innerHTML="";
+  XG_BANDS.forEach(([l])=>{const o=document.createElement("option");o.value=l;o.textContent=l;xgF.appendChild(o);});
+
+  const map={stage:"stageF",team:"teamF",player:"playerF",situ:"situF",out:"outF",xg:"xgF"};
+  Object.entries(map).forEach(([k,id])=>{
+    document.getElementById(id).addEventListener("change",e=>{filt[k]=e.target.value; hoverId=null; selId=null; render();});
+  });
+  render();
+}
+
+// Loads shot data from a sibling shots.json (works when served over http/https, e.g. GitHub Pages).
+fetch("shots.json")
+  .then(r=>{ if(!r.ok) throw new Error("HTTP "+r.status); return r.json(); })
+  .then(init)
+  .catch(err=>{ document.getElementById("pitch").outerHTML="<p style='color:#b13230'>Could not load shots.json: "+err+"</p>"; });
+</script>
+</div>
+</body>
+</html>
