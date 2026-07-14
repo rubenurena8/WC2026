@@ -3,6 +3,25 @@
 <head>
 <meta charset="utf-8">
 <title>WC2026 Match Surprise Explorer</title>
+ <style>
+  :root{
+    --ink:#2c2c2a; --sub:#52514e; --muted:#898781; --line:#e1e0d9;
+    --card:#fbfaf6; --panel:#ffffff;
+    --pos:#1baf7a; --neg:#e34948; --blue:#2a78d6; --amber:#eda100;
+    /* colour semantics shared with the Surprise Explorer */
+    --q-within:#2a78d6; --q-var:#1baf7a; --q-unexp:#eda100; --q-total:#e34948;
+    --display:'Space Grotesk','Liberation Sans',Arial,sans-serif;
+    --body:'Inter','Liberation Sans',Arial,sans-serif;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0; font-family:var(--body); color:var(--ink); background:#f4f3ee;
+       -webkit-font-smoothing:antialiased; text-rendering:optimizeLegibility;}
+  .wrap{width:100%; max-width:980px; margin:0 auto; padding:26px 18px 44px;}
+
+  .backlink{font-family:var(--display); font-size:12px; font-weight:600; letter-spacing:.04em;
+            color:var(--muted); text-decoration:none;}
+  .backlink:hover{color:var(--sub);}
+  .backlink::before{content:"\2190 "; }
 </head>
 <body>
 <div class="wrap">
