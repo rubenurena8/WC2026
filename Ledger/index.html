@@ -181,9 +181,10 @@
   </div>
 
   <p class="note">Built directly from the explorer's <code>data.json</code> &mdash; no separate dataset.
-  Result scale = win + &frac12;&middot;draw. <b>Post&#8209;odds</b> serve as the performance&#8209;deserved proxy (the market's
-  informed re&#8209;rating once the match is known). <b>Luck</b> = actual &minus; post; <b>Mispricing</b> = post &minus; pre.
-  Their sum is the &Delta;&#8321; surprise you see in the explorer.</p>
+  Values are shown as a share of a win (100% = a win, 50% = a draw). <b>+15% luck / game</b> means a team took,
+  on average, 15 points of result per game beyond what its performances earned. <b>Post&#8209;odds</b> stand in for
+  performance&#8209;deserved (the market's informed re&#8209;rating once the match is known); <b>Luck</b> = actual &minus; post,
+  <b>Mispricing</b> = post &minus; pre.</p>
   <footer>Ruben Urena &middot; <b>Own Analysis</b></footer>
 </div>
 
@@ -191,6 +192,10 @@
 let RAW=[], ROWS=[], metric="luck", unit="team", stage="__ALL__", selected=null;
 const $=s=>document.querySelector(s);
 const fmt=n=>(n>=0?"+":"")+n.toFixed(2);
+// express a result-share value as percentage points (×100)
+const pct=n=>(n>=0?"+":"")+Math.round(n*100)+"%";
+// per-game percentage, given a total and a game count
+const pctPG=(tot,games)=>games?pct(tot/games):"0%";
 const SCALE={luck:{pos:"Lucky",neg:"Unlucky",label:"Luck"},
              mispricing:{pos:"Underrated",neg:"Overrated",label:"Mispricing"}};
 const QCOL={"Within expectation":"var(--q-within)","Prediction variance":"var(--q-var)",
@@ -246,23 +251,24 @@ function teamAgg(){
 function render(){
   const sc=SCALE[metric];
   $("#scaleLabel").textContent=`${sc.neg} \u2190 | \u2192 ${sc.pos}`;
-  $("#valLabel").textContent=sc.label;
+  $("#valLabel").textContent=unit==="team"?sc.label+" / game":sc.label;
   $("#unitLabel").textContent=unit==="team"?"Team":"Match";
   let list=unit==="team"?teamAgg():ROWS.filter(inStage);
   list.sort((a,b)=>b[metric]-a[metric]);
   const maxAbs=Math.max(...list.map(x=>Math.abs(x[metric])),0.2);
   const host=$("#rows"); host.innerHTML="";
   list.forEach((r,i)=>{
-    const v=r[metric], side=v>=0?"pos":"neg", pct=Math.min(Math.abs(v)/maxAbs*50,50);
-    const label=unit==="team"?`${r.team}<span class="sub">${r.n}&nbsp;pl</span>`
+    const v=r[metric], side=v>=0?"pos":"neg", barW=Math.min(Math.abs(v)/maxAbs*50,50);
+    const shown=unit==="team"?pctPG(v,r.n):pct(v);
+    const label=unit==="team"?`${r.team}<span class="sub">${r.n}&nbsp;games</span>`
       :`${r.team} <span class="sub">v ${r.opp} &middot; ${r.score.replace(/^[^\d]*/,'')}</span>`;
     const key=unit==="team"?r.team:(r.team+r.opp+r.score);
     const row=document.createElement("div");
     row.className="row"+(selected===key?" sel":"");
     row.innerHTML=`<span class="rank">${i+1}</span><span class="tname">${label}</span>`+
       `<span class="bar-wrap"><span class="bar-mid"></span>`+
-      `<span class="bar" style="${side==='pos'?'left:50%':'right:50%'};width:${pct}%;background:var(--${side})"></span></span>`+
-      `<span class="rr ${side}">${fmt(v)}</span>`;
+      `<span class="bar" style="${side==='pos'?'left:50%':'right:50%'};width:${barW}%;background:var(--${side})"></span></span>`+
+      `<span class="rr ${side}">${shown}</span>`;
     row.onclick=()=>{selected=key; unit==="team"?detailTeam(r):detailMatch(r); render();};
     host.appendChild(row);
   });
@@ -293,8 +299,8 @@ function detailTeam(t){
   const bl=t.biggestLuck, bm=t.biggestMis;
   $("#detail").innerHTML=`<div class="d-name">${t.team}</div><div class="d-verdict">${verdict}</div>`+
     `<div class="twocard">`+
-    `<div class="mini luck"><div class="k">Luck</div><div class="v ${lside}">${fmt(t.luck)}</div><div class="cap">result vs<br>run of play</div></div>`+
-    `<div class="mini mis"><div class="k">Mispricing</div><div class="v ${mside}">${fmt(t.mispricing)}</div><div class="cap">run of play<br>vs the odds</div></div>`+
+    `<div class="mini luck"><div class="k">Luck / game</div><div class="v ${lside}">${pctPG(t.luck,t.n)}</div><div class="cap">result vs run of play<br>(${fmt(t.luck)} total)</div></div>`+
+    `<div class="mini mis"><div class="k">Mispricing / game</div><div class="v ${mside}">${pctPG(t.mispricing,t.n)}</div><div class="cap">run of play vs odds<br>(${fmt(t.mispricing)} total)</div></div>`+
     `</div>`+
     miniQuad(t.rows)+
     `<div class="d-sec">Biggest lucky / unlucky match</div>`+
@@ -309,11 +315,11 @@ function detailMatch(r){
     `<div class="d-verdict">${r.team} v ${r.opp} &middot; ${r.stage}<br><b>${r.score}</b> &middot; `+
     `<span style="color:${QCOL[r.q]};font-weight:600">${r.q}</span></div>`+
     `<div class="twocard">`+
-    `<div class="mini luck"><div class="k">Luck</div><div class="v ${lside}">${fmt(r.luck)}</div><div class="cap">got ${r.actual.toFixed(2)} vs<br>${r.deserved.toFixed(2)} deserved</div></div>`+
-    `<div class="mini mis"><div class="k">Mispricing</div><div class="v ${mside}">${fmt(r.mispricing)}</div><div class="cap">${r.deserved.toFixed(2)} deserved vs<br>${r.expected.toFixed(2)} priced</div></div>`+
+    `<div class="mini luck"><div class="k">Luck</div><div class="v ${lside}">${pct(r.luck)}</div><div class="cap">got ${Math.round(r.actual*100)}% vs<br>${Math.round(r.deserved*100)}% deserved</div></div>`+
+    `<div class="mini mis"><div class="k">Mispricing</div><div class="v ${mside}">${pct(r.mispricing)}</div><div class="cap">${Math.round(r.deserved*100)}% deserved vs<br>${Math.round(r.expected*100)}% priced</div></div>`+
     `</div>`+
-    `<div class="d-verdict">Actual result claimed <b>${r.actual.toFixed(2)}</b> of the win; the post&#8209;match re&#8209;rating `+
-    `warranted <b>${r.deserved.toFixed(2)}</b>; the market priced <b>${r.expected.toFixed(2)}</b>. `+
+    `<div class="d-verdict">The result was worth <b>${Math.round(r.actual*100)}%</b> of a win; the performance `+
+    `warranted <b>${Math.round(r.deserved*100)}%</b>; the market priced <b>${Math.round(r.expected*100)}%</b>. `+
     `Sum of the two gaps = the &Delta;&#8321; surprise (${(r.d1).toFixed(2)}) plotted in the explorer.</div>`;
 }
 
