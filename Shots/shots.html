@@ -246,8 +246,9 @@ function drawGoal(){
     if(getOutcome(s) === "Blocked") return;      // blocked shots never reach the goal frame
     if(s.gx === undefined || s.gx === null || s.gz === undefined || s.gz === null) return;
 
-    // Map gx from [GOAL_X_MIN, GOAL_X_MAX] to SVG X [20, 100]
-    const cx = 20 + ((s.gx - GOAL_X_MIN) * (80 / (GOAL_X_MAX - GOAL_X_MIN)));
+    // Map gx to SVG X, mirrored (100 - ...) so left/right in the goal frame match
+    // the on-pitch panel rather than reading as the shooter's mirror image.
+    const cx = 100 - ((s.gx - GOAL_X_MIN) * (80 / (GOAL_X_MAX - GOAL_X_MIN)));
     // Map gz from [GOAL_Z_MIN, GOAL_Z_MAX] to SVG Y [40, 12] (height inverted)
     const cy = 40 - (((s.gz - GOAL_Z_MIN) / (GOAL_Z_MAX - GOAL_Z_MIN)) * 28);
 
