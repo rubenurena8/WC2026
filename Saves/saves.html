@@ -1,0 +1,506 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>WC2026 &mdash; Save Explorer</title>
+<style>
+  :root{
+    --ink:#2c2c2a; --sub:#52514e; --muted:#898781; --line:#e1e0d9;
+    --card:#ffffff; --panel:#ffffff;
+    --blue:#2a78d6; --green:#1baf7a; --amber:#eda100; --red:#e34948;
+    --display:'Liberation Sans',Arial,sans-serif;
+    --body:'Liberation Sans',Arial,sans-serif;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0; font-family:var(--body); color:var(--ink); background:#ffffff;
+       -webkit-font-smoothing:antialiased; text-rendering:optimizeLegibility;}
+  .wrap{width:100%; max-width:1230px; margin:0 auto; padding:26px 18px 44px;}
+
+  .backlink{font-family:var(--display); font-size:12px; font-weight:600; letter-spacing:.04em;
+            color:var(--muted); text-decoration:none;}
+  .backlink:hover{color:var(--sub);}
+  .backlink::before{content:"\2190 ";}
+
+  header{text-align:center; margin:14px 0 18px;}
+  .kicker{font-family:var(--display); font-size:12px; font-weight:600; letter-spacing:.18em;
+          text-transform:uppercase; color:var(--muted); margin-bottom:9px;}
+  h1{font-family:var(--display); font-size:32px; font-weight:700; letter-spacing:-0.02em;
+     color:var(--sub); margin:0 0 11px; line-height:1.07;}
+  .lede{font-size:14px; color:var(--muted); max-width:670px; margin:0 auto; line-height:1.55;}
+  .lede b{color:var(--sub); font-weight:600;}
+
+  footer{font-family:var(--display); text-align:right; font-size:13px; color:var(--muted); padding:20px 4px 0 0;}
+  footer b{color:var(--sub); font-weight:600;}
+  @media(max-width:760px){
+    .wrap{padding:18px 12px 34px;}
+    header{margin:10px 0 12px;}
+    h1{font-size:24px;}
+    .lede{font-size:13px;}
+    .wrap [style*="flex:1 1 380px"], .wrap [style*="flex:1 1 400px"]{max-width:100% !important; flex-basis:100% !important;}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <a class="backlink" href="../index.html">Back to Match Analytics</a>
+  <header>
+    <div class="kicker">FIFA World Cup 2026</div>
+    <h1>Save Explorer</h1>
+    <p class="lede">Every shot a goalkeeper had to deal with, twinned across two panels &mdash; where it was struck from and where it arrived in the goal mouth. Only on-target efforts count: the ones a keeper could save or concede. <b>Hover a shot to see its twin; click for detail.</b> Filter by stage, team, goalkeeper, situation, outcome and xGOT band.</p>
+  </header>
+<div style="display:flex; gap:10px; flex-wrap:wrap; justify-content:center; margin-bottom:12px; font-size:12.5px;">
+    <div><label style="font-weight:700; color:#3d3d3a;">Stage </label>
+      <select id="stageF" style="padding:4px; border:1px solid #c3c2b7; border-radius:5px;"></select></div>
+    <div><label style="font-weight:700; color:#3d3d3a;">Team </label>
+      <select id="teamF" style="padding:4px; border:1px solid #c3c2b7; border-radius:5px;"></select></div>
+    <div><label style="font-weight:700; color:#3d3d3a;">Goalkeeper </label>
+      <select id="gkF" style="padding:4px; border:1px solid #c3c2b7; border-radius:5px;"></select></div>
+    <div><label style="font-weight:700; color:#3d3d3a;">Situation </label>
+      <select id="situF" style="padding:4px; border:1px solid #c3c2b7; border-radius:5px;"></select></div>
+    <div><label style="font-weight:700; color:#3d3d3a;">Outcome </label>
+      <select id="outF" style="padding:4px; border:1px solid #c3c2b7; border-radius:5px;"></select></div>
+    <div><label style="font-weight:700; color:#3d3d3a;">Shot on target xG </label>
+      <select id="xgF" style="padding:4px; border:1px solid #c3c2b7; border-radius:5px;"></select></div>
+  </div>
+
+  <div style="display:flex; gap:14px; flex-wrap:wrap; justify-content:center;">
+    <div style="flex:1 1 380px; max-width: 500px;">
+      <div style="font-size:12px; font-weight:700; color:#3d3d3a; text-align:center; margin-bottom:4px;">Where the shot came from</div>
+      <svg id="pitch" viewBox="-2 -2 72 56.5" style="width:100%; background:#5ca15c; border:1px solid #4a824a; border-radius:6px;"></svg>
+    </div>
+    <div style="flex:1 1 400px; max-width: 600px;">
+      <div style="font-size:12px; font-weight:700; color:#3d3d3a; text-align:center; margin-bottom:4px;">What the keeper saw &mdash; placement in the goal</div>
+      <svg id="goal" viewBox="0 0 120 42" style="width:100%; background:#ffffff; border:1px solid #e1e0d9; border-radius:6px;">
+        <defs>
+          <pattern id="net" width="3" height="3" patternUnits="userSpaceOnUse">
+            <path d="M 3 0 L 0 3 M 0 0 L 3 3" fill="none" stroke="#d1d0c5" stroke-width="0.4" opacity="0.6"/>
+          </pattern>
+        </defs>
+      </svg>
+      <div id="detail" style="margin-top:10px; border:1px solid #e1e0d9; border-radius:8px; padding:10px 12px; font-size:12px; background:#ffffff; min-height:110px;">
+        <span style="color:#898781; font-style:italic;">Click a shot to see the full occasion.</span>
+      </div>
+    </div>
+  </div>
+
+  <div style="display:flex; gap:16px; justify-content:center; align-items:center; margin-top:10px; font-size:12px; color:#2c2c2a; flex-wrap:wrap;">
+    <span><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#1baf7a;"></span> Saved</span>
+    <span><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#e34948;"></span> Conceded</span>
+    <span style="color:#898781; margin-left:8px;">dot size = xGOT (how good the shot was on target)</span>
+    <span id="counter" style="color:#3d3d3a; font-weight:700;"></span>
+  </div>
+
+  <!-- ===== Shot-stopping vs expectation chart ===== -->
+  <div style="margin-top:26px; border-top:1px solid #e1e0d9; padding-top:16px;">
+    <div style="text-align:center; font-size:14px; font-weight:700; color:#3d3d3a;">Shot-stopping vs Expectation &mdash; Top 25 by shots faced</div>
+    <div style="text-align:center; font-size:12px; color:#898781; margin:2px 0 6px;">Goals conceded against <b>xGOT</b> &mdash; the goals an average keeper would concede from those same on-target shots. The grey whisker is the <b>~90% chance range</b> (Poisson&ndash;binomial) &mdash; concede totals landing inside it are <span style="font-style:italic;">indistinguishable from luck</span>. Two sides of goalkeeping:<br><b>Shot-stopping</b> = the luck-heavy outcome, did it stay out? (<span style="color:#1b9e64;font-weight:700;">Wall</span> / <span style="color:#a3a199;font-weight:700;">Fair</span> / <span style="color:#e34948;font-weight:700;">Leaky</span>). <br><b>Prevention</b> = goals saved above expected (xGOT&nbsp;&minus;&nbsp;conceded &mdash; <span style="color:#3f3d9e;font-weight:700;">Elite</span> / <span style="color:#8a88c4;font-weight:700;">Fair</span> / <span style="color:#b9b7dd;font-weight:700;">Beaten</span>).</div>
+    <div id="finishSummary" style="text-align:center; font-size:12.5px; color:#3d3d3a; margin:0 0 10px;"></div>
+    <div style="display:flex; gap:16px; justify-content:center; align-items:center; margin-bottom:6px; font-size:11.5px; color:#2c2c2a; flex-wrap:wrap;">
+      <span><span style="display:inline-block;width:22px;height:10px;border-radius:2px;background:#8fc3ef;vertical-align:middle;"></span> xGOT (expected concede)</span>
+      <span><span style="display:inline-block;width:22px;height:1px;background:#7d7b73;vertical-align:middle;position:relative;"></span> ~90% chance range</span>
+      <span><span style="display:inline-block;width:3px;height:14px;background:#e34948;vertical-align:middle;"></span> goals conceded (tick)</span>
+      <span style="color:#898781;">bold tick = beats the noise band</span>
+    </div>
+    <svg id="finishChart" style="width:100%; background:#ffffff; border:1px solid #e1e0d9; border-radius:6px;"></svg>
+    <div id="finishEmpty" style="text-align:center; font-size:12px; color:#898781; font-style:italic; padding:8px 0; display:none;">No saves match the current filters.</div>
+  </div>
+
+  <footer><b>Ruben Urena</b> &middot; Own Analysis &amp; Sofascore data</footer>
+
+<script>
+// ---- Outcome normalisation ------------------------------------------------
+// The goalkeeper view only cares about shots that reached the frame on target:
+// Goal (conceded) and Save (stopped). Everything else never troubled the keeper.
+const OUT_CANON = {
+  Goal:"Conceded", goal:"Conceded",
+  Save:"Saved", Saved:"Saved", save:"Saved"
+};
+// Colours flip the shooter's frame of reference: a Save is the good outcome (green),
+// a goal is the bad one (red) — from behind the keeper's eyes.
+const outColor = {Saved:"#1baf7a", Conceded:"#e34948", Unknown:"#52514e"};
+const NS="http://www.w3.org/2000/svg";
+// xGOT bands: how threatening the shot was once it was on target.
+const XG_BANDS = [["All",1.01],["<5%",0.05],["<10%",0.10],["<20%",0.20],["<35%",0.35],["<50%",0.50],["<70%",0.70],["<90%",0.90]];
+const STAGE_ORDER=["Group Stage","Last 32","Last 16","Quarter-finals","Semi-finals","Final"];
+
+// Goal-mouth reference frame (in the JSON's gx / gz units):
+//   gx  ~ 44.5 .. 55.5  (left post .. right post, width 11)
+//   gz  ~ 0    .. 38    (ground .. crossbar)
+const GOAL_X_MIN=44.5, GOAL_X_MAX=55.5, GOAL_Z_MIN=0, GOAL_Z_MAX=38;
+
+let SHOTS=[], filt={stage:"All",team:"All",gk:"All",situ:"All",out:"All",xg:"All"}, hoverId=null, selId=null;
+let isTouch = ("ontouchstart" in window) || (navigator.maxTouchPoints > 0);
+
+// Canonical outcome for a shot; null when the shot is off-target/blocked (not a keeper event).
+function getOutcome(s){ return OUT_CANON[s.outcome] || null; }
+// A "faced" shot is one on target: the keeper either saved it or conceded.
+function isFaced(s){ return getOutcome(s) !== null; }
+// The keeper's team is the shot's opponent (they defend the other goal).
+function gkTeam(s){ return s.opponent || "Unknown"; }
+
+function uniq(a){return Array.from(new Set(a)).sort();}
+function fillSel(sel,vals){sel.innerHTML="";["All",...vals].forEach(v=>{const o=document.createElement("option");o.value=v;o.textContent=v;sel.appendChild(o);});}
+function xgMax(){const b=XG_BANDS.find(x=>x[0]===filt.xg);return b?b[1]:1.01;}
+function passes(s){
+  if(!isFaced(s)) return false;                 // only on-target shots reach a keeper
+  const out = getOutcome(s);
+  const xgot = s.xgot || 0;
+  return (filt.stage==="All"||s.stage===filt.stage)
+      && (filt.team==="All"||gkTeam(s)===filt.team)
+      && (filt.gk==="All"||s.goalkeeper===filt.gk)
+      && (filt.situ==="All"||s.situation===filt.situ)
+      && (filt.out==="All"||out===filt.out)
+      && (filt.xg==="All"||xgot < xgMax());
+}
+
+function dot(svg,i,cx,cy,r,s){
+  if (isNaN(cx) || isNaN(cy) || isNaN(r)) return;
+
+  const c=document.createElementNS(NS,"circle");
+  c.setAttribute("cx",cx); c.setAttribute("cy",cy); c.setAttribute("r",r);
+
+  const out = getOutcome(s);
+  c.setAttribute("fill", outColor[out] || "#52514e");
+
+  const active=(hoverId===i||selId===i);
+  c.setAttribute("fill-opacity",active?1:0.75);
+  c.setAttribute("stroke",active?"#2c2c2a":"#ffffff");
+  c.setAttribute("stroke-width",active?0.8:0.3);
+  c.style.cursor="pointer";
+  c.addEventListener("mouseenter",()=>{ if(isTouch) return; hoverId=i; render(); });
+  c.addEventListener("mouseleave",()=>{ if(isTouch) return; hoverId=null; render(); });
+  const select=(ev)=>{ ev.stopPropagation(); ev.preventDefault(); selId=i; hoverId=i; showDetail(s); render(); };
+  c.addEventListener("click", select);
+  c.addEventListener("touchend",(ev)=>{ isTouch=true; select(ev); }, {passive:false});
+  svg.appendChild(c);
+}
+
+function drawPitch(){
+  const svg=document.getElementById("pitch"); svg.innerHTML="";
+  const line=(x1,y1,x2,y2)=>{const l=document.createElementNS(NS,"line");l.setAttribute("x1",x1);l.setAttribute("y1",y1);l.setAttribute("x2",x2);l.setAttribute("y2",y2);l.setAttribute("stroke","#ffffff");l.setAttribute("stroke-width","0.4");l.setAttribute("stroke-opacity","0.8");svg.appendChild(l);};
+  const circle=(cx,cy,r)=>{const c=document.createElementNS(NS,"circle");c.setAttribute("cx",cx);c.setAttribute("cy",cy);c.setAttribute("r",r);c.setAttribute("fill","none");c.setAttribute("stroke","#ffffff");c.setAttribute("stroke-width","0.4");svg.appendChild(c);};
+  const spot=(cx,cy,r)=>{const c=document.createElementNS(NS,"circle");c.setAttribute("cx",cx);c.setAttribute("cy",cy);c.setAttribute("r",r);c.setAttribute("fill","#ffffff");svg.appendChild(c);};
+  const path=(d)=>{const p=document.createElementNS(NS,"path");p.setAttribute("d",d);p.setAttribute("fill","none");p.setAttribute("stroke","#ffffff");p.setAttribute("stroke-width","0.4");svg.appendChild(p);};
+
+  line(0,0, 68,0); line(0,0, 0,52.5); line(68,0, 68,52.5);
+  line(0,52.5, 68,52.5);
+  circle(34, 52.5, 9.15); spot(34, 52.5, 0.4);
+  line(13.84,0, 13.84,16.5); line(54.16,0, 54.16,16.5); line(13.84,16.5, 54.16,16.5);
+  line(24.84,0, 24.84,5.5); line(43.16,0, 43.16,5.5); line(24.84,5.5, 43.16,5.5);
+  spot(34, 11, 0.4);
+  path("M 26.69 16.5 A 9.15 9.15 0 0 0 41.31 16.5");
+  line(30.34,0, 30.34,-1.5); line(37.66,0, 37.66,-1.5); line(30.34,-1.5, 37.66,-1.5);
+
+  SHOTS.forEach((s,i)=>{
+    if(!passes(s))return;
+    if (s.px === undefined || s.py === undefined) return;
+    const pX = (s.py / 100) * 68;
+    const pY = (s.px / 100) * 105;
+    // Size by xGOT — how dangerous the shot was on target, i.e. how hard to save.
+    const xgot = s.xgot || 0;
+    dot(svg,i, pX, pY, 0.9+Math.sqrt(xgot)*2.6, s);
+  });
+}
+
+function drawGoal(){
+  const svg = document.getElementById("goal");
+  const netPattern = svg.querySelector('defs').outerHTML;
+  svg.innerHTML = netPattern;
+
+  const line = (x1, y1, x2, y2, w, col="#2c2c2a") => {
+    const l = document.createElementNS(NS, "line");
+    l.setAttribute("x1", x1); l.setAttribute("y1", y1);
+    l.setAttribute("x2", x2); l.setAttribute("y2", y2);
+    l.setAttribute("stroke", col); l.setAttribute("stroke-width", w);
+    svg.appendChild(l);
+  };
+  const rect = (x, y, w, h) => {
+    const r = document.createElementNS(NS, "rect");
+    r.setAttribute("x", x); r.setAttribute("y", y);
+    r.setAttribute("width", w); r.setAttribute("height", h);
+    r.setAttribute("fill", "url(#net)");
+    r.setAttribute("stroke", "#c3c2b7"); r.setAttribute("stroke-width", "0.5");
+    svg.appendChild(r);
+  };
+
+  rect(20, 12, 80, 28);
+  line(0, 40, 120, 40, "1.5", "#a3a299");
+  line(20, 12, 100, 12, "3");
+  line(20, 12, 20, 40, "3");
+  line(100, 12, 100, 40, "3");
+
+  SHOTS.forEach((s, i) => {
+    if(!passes(s)) return;
+    if(s.gx === undefined || s.gx === null || s.gz === undefined || s.gz === null) return;
+
+    const cx = 20 + ((s.gx - GOAL_X_MIN) * (80 / (GOAL_X_MAX - GOAL_X_MIN)));
+    const cy = 40 - (((s.gz - GOAL_Z_MIN) / (GOAL_Z_MAX - GOAL_Z_MIN)) * 28);
+
+    dot(svg, i, cx, cy, 1.3 + Math.sqrt(s.xgot || 0) * 3.4, s);
+  });
+}
+
+function showDetail(s){
+  const xgot = s.xgot || 0;
+  const out = getOutcome(s);
+
+  // Keeper-first: goalkeeper and their team lead; the shooter sits at the bottom.
+  // Body part and other shooter-centric fields are deliberately omitted.
+  document.getElementById("detail").innerHTML =
+    "<div style='font-weight:700; font-size:13px; color:#2c2c2a;'>"+(s.goalkeeper||"Unknown")+" &middot; "+gkTeam(s)+"</div>"+
+    "<div style='color:#898781; margin-bottom:8px;'>vs "+(s.team||"Opponent")+" &middot; "+s.minute+"'</div>"+
+    "<div style='display:grid; grid-template-columns:90px auto; gap:4px 16px;'>"+
+    "<span style='color:#52514e;'>Outcome</span><span style='font-weight:700;color:"+(outColor[out] || "#52514e")+"'>"+out+"</span>"+
+    "<span style='color:#52514e;'>Situation</span><span style='color:#2c2c2a;'>"+(s.situation || "Unknown")+"</span>"+
+    "<span style='color:#52514e;'>xG</span><span style='color:#2c2c2a;'>"+(s.xg||0).toFixed(2)+"</span>"+
+    "<span style='color:#52514e;'>xGOT</span><span style='color:#2c2c2a;'>"+(xgot>0?xgot.toFixed(2):"\u2014")+"</span>"+
+    "<span style='color:#52514e;'>Shooter</span><span style='color:#2c2c2a;'>"+(s.player || "Unknown")+"</span>"+
+    "</div>";
+}
+function updateCounter(){
+  const v=SHOTS.filter(passes);
+  const conceded=v.filter(s=>getOutcome(s)==="Conceded").length;
+  const saves=v.filter(s=>getOutcome(s)==="Saved").length;
+  const xgot=v.reduce((a,s)=>a+(s.xgot||0),0);
+  document.getElementById("counter").textContent=v.length+" faced \u00b7 "+saves+" saved \u00b7 "+conceded+" conceded \u00b7 "+xgot.toFixed(1)+" xGOT";
+}
+// ---- Shot-stopping vs xGOT chart (top 25 keepers by shots faced) ------------
+// Poisson-binomial distribution of goals conceded, treating each on-target shot
+// as an independent Bernoulli(xgot_i): the chance an average keeper concedes it.
+function poissonBinomialPMF(ps){
+  let dist = [1.0];
+  for(const p of ps){
+    const nd = new Array(dist.length+1).fill(0);
+    for(let k=0;k<dist.length;k++){
+      nd[k]   += dist[k]*(1-p);
+      nd[k+1] += dist[k]*p;
+    }
+    dist = nd;
+  }
+  return dist;
+}
+// Percentile of the conceded total within the distribution of concede-outcomes
+// these shots would produce. LOW % = conceded fewer than the shots usually yield
+// (a wall); ~50% = as expected; HIGH % = conceded more (leaky). Mid-p for ties.
+function concedePercentile(xgList, conceded){
+  const pmf = poissonBinomialPMF(xgList);
+  let below = 0;
+  for(let k=0;k<conceded && k<pmf.length;k++) below += pmf[k];
+  const at = (conceded<pmf.length) ? pmf[conceded] : 0;
+  return below + 0.5*at;
+}
+
+function drawFinishing(){
+  const svg = document.getElementById("finishChart");
+  const empty = document.getElementById("finishEmpty");
+  if(!svg) return;
+
+  // Aggregate the currently-filtered on-target shots by goalkeeper.
+  const agg = {};
+  SHOTS.filter(passes).forEach(s=>{
+    const gk = s.goalkeeper || "Unknown";
+    if(!agg[gk]) agg[gk] = {xgot:0, conceded:0, saves:0, faced:0, xgotList:[], team:gkTeam(s)};
+    const q = (s.xgot || 0);
+    agg[gk].xgot    += q;
+    agg[gk].conceded+= getOutcome(s)==="Conceded" ? 1 : 0;
+    agg[gk].saves   += getOutcome(s)==="Saved" ? 1 : 0;
+    agg[gk].faced   += 1;
+    agg[gk].xgotList.push(q);
+  });
+
+  let rows = Object.entries(agg).map(([gk,v])=>{
+    // Poisson-binomial expectation over on-target shots.
+    const variance = v.xgotList.reduce((a,q)=>a + q*(1-q), 0);
+    const sd = Math.sqrt(variance);
+    const pctile = concedePercentile(v.xgotList, v.conceded); // 0..1, high = leaky
+    const prevented = v.xgot - v.conceded;   // goals saved above expectation
+    return {gk, ...v, diff:v.conceded - v.xgot, sd,
+            xgotPerShot: v.xgot / Math.max(1,v.faced),
+            savePct: v.saves / Math.max(1,v.faced), pctile, prevented};
+  });
+  // Top 25 by shots faced (busiest keepers), presented by goals prevented, best first.
+  rows.sort((a,b)=> b.faced - a.faced);
+  rows = rows.slice(0, 25);
+  rows.sort((a,b)=> b.prevented - a.prevented || b.faced - a.faced);
+
+  if(rows.length === 0){ svg.style.display="none"; empty.style.display="block"; document.getElementById("finishSummary").textContent=""; return; }
+  svg.style.display=""; empty.style.display="none";
+
+  const Z = 1.64;
+  const withinBand = rows.filter(r => r.conceded >= r.xgot - Z*r.sd && r.conceded <= r.xgot + Z*r.sd).length;
+  const summaryEl = document.getElementById("finishSummary");
+  if(summaryEl){
+    summaryEl.innerHTML = "<b>"+withinBand+" of "+rows.length+"</b> conceded within the noise band (\u00b190% of expected) \u2014 "+
+      "most apparent over/under-performance is indistinguishable from variance.";
+  }
+
+  const rowH = 26, top = 14, bottom = 18;
+  const labelW = 150, valueW = 420, rightPad = 14;
+  const W = 1020;
+  const H = top + bottom + rows.length*rowH;
+  const plotL = labelW, plotR = W - valueW - rightPad;
+  const plotW = plotR - plotL;
+
+  // Columns (right-aligned), left-to-right after the bars:
+  // Conceded/xGOT, Shot-stopping, Prevention, Faced, xGOT/sh, Save%.
+  const colGPS    = W - rightPad;          // Save% (rightmost)
+  const colPerSh  = colGPS - 50;           // xGOT/sh
+  const colShots  = colPerSh - 46;         // Faced
+  const colPlace  = colShots - 78;         // Prevention (xGOT-conceded + verdict)
+  const colFinish = colPlace - 82;         // Shot-stopping (% + Wall/Fair/Leaky)
+  const colGoals  = colFinish - 82;        // Conceded / xGOT (+ diff) — closest to bars
+
+  const maxWhisker = Math.max(...rows.map(r=> r.xgot + 1.64*r.sd));
+  const maxVal = Math.max(1, maxWhisker, ...rows.map(r=>Math.max(r.xgot, r.conceded)));
+  const scale = v => (Math.max(0,v) / maxVal) * plotW;
+
+  svg.setAttribute("viewBox", `0 0 ${W} ${H}`);
+  svg.setAttribute("height", H);
+  while(svg.firstChild) svg.removeChild(svg.firstChild);
+
+  const el=(name,attrs)=>{const e=document.createElementNS(NS,name);for(const k in attrs)e.setAttribute(k,attrs[k]);return e;};
+  const txt=(x,y,s,attrs={})=>{const t=el("text",{x,y,...attrs});t.textContent=s;svg.appendChild(t);return t;};
+
+  for(let g=0; g<=Math.ceil(maxVal); g++){
+    const gx = plotL + scale(g);
+    svg.appendChild(el("line",{x1:gx,y1:top-2,x2:gx,y2:H-bottom,stroke:"#ece9e1","stroke-width":1}));
+    txt(gx, H-3, g, {"font-size":9, fill:"#b6b4ab", "text-anchor":"middle", "font-family":"'Liberation Sans',Arial,sans-serif"});
+  }
+
+  rows.forEach((r,i)=>{
+    const y = top + i*rowH;
+    const cy = y + rowH/2;
+    const barH = 11;
+
+    // Goalkeeper name (right-aligned into the label gutter).
+    txt(labelW-8, cy+1, r.gk.length>22 ? r.gk.slice(0,21)+"\u2026" : r.gk,
+        {"font-size":13, fill:"#2c2c2a", "text-anchor":"end", "dominant-baseline":"middle", "font-family":"'Liberation Sans',Arial,sans-serif"});
+
+    // xGOT bar (light blue) — expected goals conceded.
+    const xgEnd = plotL + scale(r.xgot);
+    const gEnd  = plotL + scale(r.conceded);
+    svg.appendChild(el("rect",{x:plotL, y:cy-barH/2, width:Math.max(0.5,scale(r.xgot)), height:barH, rx:2, fill:"#8fc3ef"}));
+
+    // ~90% chance band around xGOT.
+    const loX = plotL + scale(r.xgot - 1.64*r.sd);
+    const hiX = plotL + scale(r.xgot + 1.64*r.sd);
+    const whiskY = cy;
+    svg.appendChild(el("line",{x1:loX, y1:whiskY, x2:hiX, y2:whiskY, stroke:"#7d7b73", "stroke-width":1, "stroke-opacity":0.55}));
+    svg.appendChild(el("line",{x1:loX, y1:cy-4, x2:loX, y2:cy+4, stroke:"#7d7b73", "stroke-width":1, "stroke-opacity":0.55}));
+    svg.appendChild(el("line",{x1:hiX, y1:cy-4, x2:hiX, y2:cy+4, stroke:"#7d7b73", "stroke-width":1, "stroke-opacity":0.55}));
+
+    // Prevention shading: green when conceded < xGOT (kept them out), red when worse.
+    if(Math.abs(r.diff) >= 0.05){
+      const better = r.diff < 0;   // conceded fewer than expected = good keeping
+      const x0 = Math.min(xgEnd, gEnd), x1 = Math.max(xgEnd, gEnd);
+      svg.appendChild(el("rect",{x:x0, y:cy-barH/2, width:Math.max(0.5,x1-x0), height:barH, rx:2,
+        fill: better ? "#1baf7a" : "#e34948", "fill-opacity":0.30}));
+    }
+    // Conceded tick: bold when the total escapes the noise band (a real signal).
+    const outside = (r.conceded < r.xgot - 1.64*r.sd) || (r.conceded > r.xgot + 1.64*r.sd);
+    svg.appendChild(el("line",{x1:gEnd, y1:cy-barH/2-3, x2:gEnd, y2:cy+barH/2+3,
+      stroke: r.diff<=0 ? "#1baf7a" : "#e34948",
+      "stroke-width": outside ? 3 : 1.6,
+      "stroke-opacity": outside ? 1 : 0.6}));
+
+    // ---- Value columns (all right-aligned) ----
+    // Save% — quiet grey column.
+    txt(colGPS, cy+1, Math.round(r.savePct*100)+"%",
+        {"font-size":12, fill:"#a3a199", "text-anchor":"end", "dominant-baseline":"middle",
+         "font-family":"'Liberation Sans',Arial,sans-serif"});
+
+    // xGOT per faced shot — quiet grey column.
+    txt(colPerSh, cy+1, r.xgotPerShot.toFixed(2),
+        {"font-size":12, fill:"#a3a199", "text-anchor":"end", "dominant-baseline":"middle",
+         "font-family":"'Liberation Sans',Arial,sans-serif"});
+
+    // Faced — quiet grey column.
+    txt(colShots, cy+1, r.faced,
+        {"font-size":12, fill:"#a3a199", "text-anchor":"end", "dominant-baseline":"middle",
+         "font-family":"'Liberation Sans',Arial,sans-serif"});
+
+    // Shot-stopping: percentile of conceded total. LOW = conceded fewer than these
+    // shots usually yield (a wall); ~50% as expected; HIGH = leaky. We display the
+    // "kept out" complement so a higher number always reads as better keeping.
+    const pc = r.pctile;                          // 0..1 (high = leaky)
+    const wall = pc <= 0.15, leaky = pc >= 0.85;
+    const chipColor = wall ? "#1b9e64" : (leaky ? "#e34948" : "#a3a199");
+    const chipText  = wall ? "Wall" : (leaky ? "Leaky" : "Fair");
+    txt(colFinish, cy-3, Math.round((1-pc)*100) + "%",
+        {"font-size":12, fill:"#2c2c2a", "text-anchor":"end", "dominant-baseline":"middle",
+         "font-family":"'Liberation Sans',Arial,sans-serif"});
+    txt(colFinish, cy+11, chipText,
+        {"font-size":11.5, fill:chipColor, "text-anchor":"end", "font-weight":"700",
+         "font-family":"'Liberation Sans',Arial,sans-serif"});
+
+    // Prevention: xGOT - conceded = goals saved above expectation. Volume-robust
+    // signed total (a ratio blows up on tiny samples). Indigo single-hue ramp.
+    const prev = r.prevented;
+    const elite = prev >= 1.0, beaten = prev < 0;
+    const plcColor = elite ? "#3f3d9e" : (beaten ? "#b9b7dd" : "#8a88c4");
+    const plcWord  = elite ? "Elite" : (beaten ? "Beaten" : "Fair");
+    txt(colPlace, cy-3, (prev>=0?"+":"\u2212")+Math.abs(prev).toFixed(1),
+        {"font-size":12, fill:"#2c2c2a", "text-anchor":"end", "dominant-baseline":"middle",
+         "font-family":"'Liberation Sans',Arial,sans-serif"});
+    txt(colPlace, cy+11, plcWord,
+        {"font-size":11.5, fill:plcColor, "text-anchor":"end", "font-weight":"700",
+         "font-family":"'Liberation Sans',Arial,sans-serif"});
+
+    // Conceded / xGOT (dark) with the signed diff beneath — green when under xGOT
+    // (fewer goals than expected = good), red when over.
+    const diffStr = (r.diff>=0?"+":"\u2212") + Math.abs(r.diff).toFixed(1);
+    txt(colGoals, cy-3, r.conceded + " / " + r.xgot.toFixed(1),
+        {"font-size":12, fill:"#2c2c2a", "text-anchor":"end", "dominant-baseline":"middle",
+         "font-family":"'Liberation Sans',Arial,sans-serif"});
+    const diffColor = r.diff<=-0.05 ? "#1baf7a" : (r.diff>=0.05 ? "#e34948" : "#a3a199");
+    txt(colGoals, cy+11, diffStr,
+        {"font-size":12, fill:diffColor, "text-anchor":"end",
+         "font-family":"'Liberation Sans',Arial,sans-serif", "font-weight":"700"});
+  });
+
+  // Column headers for the value area.
+  txt(colGoals, top-2, "Conceded / xGOT", {"font-size":11, fill:"#2c2c2a", "text-anchor":"end", "font-weight":"700", "font-family":"'Liberation Sans',Arial,sans-serif"});
+  txt(colFinish, top-2, "Shot-stopping", {"font-size":11, fill:"#2c2c2a", "text-anchor":"end", "font-weight":"700", "font-family":"'Liberation Sans',Arial,sans-serif"});
+  txt(colPlace, top-2, "Prevention", {"font-size":11, fill:"#2c2c2a", "text-anchor":"end", "font-weight":"700", "font-family":"'Liberation Sans',Arial,sans-serif"});
+  txt(colShots, top-2, "Faced", {"font-size":11, fill:"#a3a199", "text-anchor":"end", "font-family":"'Liberation Sans',Arial,sans-serif"});
+  txt(colPerSh, top-2, "xGOT/sh", {"font-size":11, fill:"#a3a199", "text-anchor":"end", "font-family":"'Liberation Sans',Arial,sans-serif"});
+  txt(colGPS, top-2, "Save%", {"font-size":11, fill:"#a3a199", "text-anchor":"end", "font-family":"'Liberation Sans',Arial,sans-serif"});
+}
+
+function render(){ drawPitch(); drawGoal(); updateCounter(); drawFinishing(); }
+
+function init(data){
+  SHOTS=data;
+
+  // Restrict every selector to shots that actually reached a keeper (on target).
+  const faced = SHOTS.filter(isFaced);
+
+  const stagesPresent=STAGE_ORDER.filter(st=>faced.some(x=>x.stage===st))
+    .concat(uniq(faced.map(s=>s.stage||"Unknown")).filter(st=>!STAGE_ORDER.includes(st)));
+
+  fillSel(document.getElementById("stageF"), stagesPresent);
+  fillSel(document.getElementById("teamF"), uniq(faced.map(gkTeam)));
+  fillSel(document.getElementById("gkF"), uniq(faced.map(s=>s.goalkeeper).filter(Boolean)));
+  fillSel(document.getElementById("situF"), uniq(faced.map(s=>s.situation)));
+  fillSel(document.getElementById("outF"), uniq(faced.map(getOutcome)));
+
+  const xgF=document.getElementById("xgF"); xgF.innerHTML="";
+  XG_BANDS.forEach(([l])=>{const o=document.createElement("option");o.value=l;o.textContent=l;xgF.appendChild(o);});
+
+  const map={stage:"stageF",team:"teamF",gk:"gkF",situ:"situF",out:"outF",xg:"xgF"};
+  Object.entries(map).forEach(([k,id])=>{
+    document.getElementById(id).addEventListener("change",e=>{filt[k]=e.target.value; hoverId=null; selId=null; render();});
+  });
+  render();
+}
+
+// Loads shot data from a sibling saves.json (works when served over http/https).
+fetch("saves.json")
+  .then(r=>{ if(!r.ok) throw new Error("HTTP "+r.status); return r.json(); })
+  .then(init)
+  .catch(err=>{ document.getElementById("pitch").outerHTML="<p style='color:#b13230'>Could not load saves.json: "+err+"</p>"; });
+</script>
+</div>
+</body>
+</html>
