@@ -496,7 +496,7 @@ function init(data){
 }
 
 // Loads shot data from a sibling saves.json (works when served over http/https).
-fetch("saves.json")
+fetch("Shots/shots.json")
   .then(r=>{ if(!r.ok) throw new Error("HTTP "+r.status); return r.json(); })
   .then(init)
   .catch(err=>{ document.getElementById("pitch").outerHTML="<p style='color:#b13230'>Could not load saves.json: "+err+"</p>"; });
