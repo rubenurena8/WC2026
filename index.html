@@ -41,7 +41,6 @@
   a.card.shots{--accent:#023020;}
   a.card.ledger{--accent:var(--amber);}
   a.card.saves{--accent:#7b5cc0;}
-  a.card.calib{--accent:#1baf7a;}
   a.card:hover{
     transform:translateY(-4px);
     box-shadow:0 12px 28px rgba(44,44,42,.13);
@@ -82,12 +81,6 @@
   .thumb-shots .arc{position:absolute; border:1px solid rgba(255,255,255,.85); border-radius:50%;}
   .thumb-shots .sdot{position:absolute; border-radius:50%; border:1px solid #fff; box-shadow:0 1px 2px rgba(0,0,0,.22);}
 
-  .thumb-calib{background:var(--card); position:relative;}
-  .thumb-calib .cax{position:absolute; background:var(--line);}
-  .thumb-calib .cdiag{position:absolute; left:16px; bottom:16px; width:1px; height:118px;
-    transform-origin:bottom left; transform:rotate(-45deg); border-left:1px dashed #c3c2b7;}
-  .thumb-calib .cdot{position:absolute; border-radius:50%; background:#2a78d6; box-shadow:0 1px 2px rgba(44,44,42,.2);}
-
   .card-body{padding:15px 17px 17px;}
   .card-title{font-family:var(--display); font-size:18px; font-weight:600; color:var(--ink); margin:0 0 5px; letter-spacing:-0.01em;}
   .card-desc{font-size:13px; color:var(--sub); line-height:1.55; margin:0 0 13px;}
@@ -110,7 +103,7 @@
   <header>
     <div class="kicker">FIFA World Cup 2026</div>
     <h1>Match Analytics</h1>
-    <p class="lede">Five interactive explorers built from modeled tournament data &mdash; evaluating how surprising each scoreline really was, splitting that surprise into luck versus market mispricing, testing whether the pre-match prices were actually well calibrated, and mapping every shot and save to assess its quality.</p>
+    <p class="lede">Three interactive explorers built from modeled tournament data. One evaluates how surprising each scoreline really was, one splits that surprise into luck versus market mispricing, and the last maps the trajectory of every shot to assess its quality.</p>
   </header>
 
   <div class="cards">
@@ -151,24 +144,6 @@
         <div class="card-title">Luck &amp; Mispricing Ledger</div>
         <p class="card-desc">The same matches, decomposed. Splits each result's surprise into two axes the scoreline hides &mdash; luck (result beyond performance) and mispricing (performance the market underpriced). Rank teams or matches, click for the full breakdown.</p>
         <span class="card-cta">Open the Ledger</span>
-      </div>
-    </a>
-
-    <a class="card calib" href="Calibration/calibration.html" aria-label="Open the Market Calibration Explorer">
-      <div class="thumb thumb-calib" aria-hidden="true">
-        <div class="cax" style="left:16px; top:16px; bottom:16px; width:1px;"></div>
-        <div class="cax" style="left:16px; right:16px; bottom:16px; height:1px;"></div>
-        <div class="cdiag"></div>
-        <div class="cdot" style="left:24%; bottom:26%; width:9px; height:9px;"></div>
-        <div class="cdot" style="left:37%; bottom:31%; width:11px; height:11px;"></div>
-        <div class="cdot" style="left:50%; bottom:56%; width:13px; height:13px;"></div>
-        <div class="cdot" style="left:63%; bottom:63%; width:12px; height:12px;"></div>
-        <div class="cdot" style="left:76%; bottom:72%; width:10px; height:10px;"></div>
-      </div>
-      <div class="card-body">
-        <div class="card-title">Market Calibration Explorer</div>
-        <p class="card-desc">Not who won &mdash; whether the prices were right. Every match becomes three probabilistic forecasts, plotted against how often they actually landed. A reliability diagram with Brier score, log loss and Wilson bands, plus a pre- versus post-match odds toggle.</p>
-        <span class="card-cta">Open the Calibration explorer</span>
       </div>
     </a>
 
