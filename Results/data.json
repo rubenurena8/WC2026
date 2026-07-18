@@ -99,4 +99,5 @@
  {"Match":"Norway 1-2 England","Home":"Norway","Away":"England","d1":0.1322,"d2":1.2135,"Q":"Unexpected result","Stage":"Quarter-finals","PreOdds":"23% 25% 52%","PostOdds":"28% 33% 39%","P(exact score)":"6%"},
  {"Match":"Argentina 3-1 Switzerland","Home":"Argentina","Away":"Switzerland","d1":0.1585,"d2":1.3179,"Q":"Unexpected result","Stage":"Quarter-finals","PreOdds":"57% 28% 15%","PostOdds":"73% 19% 8%","P(exact score)":"5%"},
  {"Match":"France 0-2 Spain","Home":"France","Away":"Spain","d1":0.4041,"d2":0.7745,"Q":"Prediction variance","Stage":"Semi-finals","PreOdds":"36% 33% 31%","PostOdds":"6% 23% 71%","P(exact score)":"19%"},
- {"Match":"England 1-2 Argentina","Home":"England","Away":"Argentina","d1":0.3751,"d2":1.0396,"Q":"Prediction variance","Stage":"Semi-finals","PreOdds":"35% 33% 32%","PostOdds":"10% 21% 69%","P(exact score)":"8%"}]
+ {"Match":"England 1-2 Argentina","Home":"England","Away":"Argentina","d1":0.3751,"d2":1.0396,"Q":"Prediction variance","Stage":"Semi-finals","PreOdds":"35% 33% 32%","PostOdds":"10% 21% 69%","P(exact score)":"8%"},
+ {"Match":"France 4-6 England","Home":"France","Away":"England","d1":0.2171,"d2":1.6029,"Q":"Totally unexpected","Stage":"Third-place","PreOdds":"54% 22% 24%","PostOdds":"38% 17% 45%","P(exact score)":"1%"}]
